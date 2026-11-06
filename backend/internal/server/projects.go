@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"math"
@@ -10,11 +11,15 @@ import (
 	"rewind/internal/auth"
 	"rewind/internal/database"
 	"rewind/internal/id"
+	"rewind/internal/storage"
 
 	"github.com/gin-gonic/gin"
 )
 
-type projectHandler struct{ store *database.ProjectStore }
+type projectHandler struct {
+	store *database.ProjectStore
+	files storage.Store
+}
 
 type projectResponse struct {
 	ID          string `json:"id"`
@@ -28,8 +33,8 @@ func projectJSON(p database.Project) projectResponse {
 	return projectResponse{p.ID, p.Name, p.Description, time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano), time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)}
 }
 
-func registerProjectRoutes(router *gin.RouterGroup, authService *auth.Service, store *database.ProjectStore) {
-	h := &projectHandler{store: store}
+func registerProjectRoutes(router *gin.RouterGroup, authService *auth.Service, store *database.ProjectStore, files storage.Store) {
+	h := &projectHandler{store: store, files: files}
 	group := router.Group("/projects")
 	group.Use((&authHandler{service: authService}).authenticate)
 	group.POST("", h.create)
@@ -137,6 +142,11 @@ func (h *projectHandler) delete(c *gin.Context) {
 	}
 	if !deleted {
 		failure(c, errNotFound, "project not found")
+		return
+	}
+	if err := h.files.DeleteProject(context.WithoutCancel(c.Request.Context()), c.Param("project_id")); err != nil {
+		_ = c.Error(err)
+		internalError(c)
 		return
 	}
 	success(c, nil)

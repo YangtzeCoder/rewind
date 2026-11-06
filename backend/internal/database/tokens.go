@@ -15,6 +15,12 @@ type TokenStore struct{ db *sql.DB }
 
 func NewTokenStore(db *sql.DB) *TokenStore { return &TokenStore{db: db} }
 
+func (s *TokenStore) ExistsHash(ctx context.Context, hash string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM api_tokens WHERE token_hash = ?)`, hash).Scan(&exists)
+	return exists, err
+}
+
 func (s *TokenStore) Create(ctx context.Context, token APIToken, hash string) error {
 	_, err := s.db.ExecContext(ctx, `INSERT INTO api_tokens (id, name, token_hash, created_at) VALUES (?, ?, ?, ?)`, token.ID, token.Name, hash, token.CreatedAt)
 	return err

@@ -1,0 +1,87 @@
+@baseUrl = http://localhost:8080/api/v1
+
+### 登录：用于创建项目和 API Token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123456"
+}
+
+### 创建项目
+# @name createProject
+POST {{baseUrl}}/projects
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "name": "备份示例"
+}
+
+### 创建 API Token
+# @name createToken
+POST {{baseUrl}}/tokens
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "name": "backup agent"
+}
+
+### 上传备份：重复执行会为同一文件新增版本
+# @name backup
+POST {{baseUrl}}/backups
+Authorization: Bearer {{createToken.response.body.$.data.token}}
+Content-Type: multipart/form-data; boundary=RewindBackupBoundary
+
+--RewindBackupBoundary
+Content-Disposition: form-data; name="project_id"
+
+{{createProject.response.body.$.data.id}}
+--RewindBackupBoundary
+Content-Disposition: form-data; name="key"
+
+docs/PRD.md
+--RewindBackupBoundary
+Content-Disposition: form-data; name="description"
+
+PRD 备份
+--RewindBackupBoundary
+Content-Disposition: form-data; name="file"; filename="PRD.md"
+Content-Type: text/markdown
+
+< ../../docs/PRD.md
+--RewindBackupBoundary--
+
+### 查询历史：最新版本排在最前
+POST {{baseUrl}}/backups/history
+Authorization: Bearer {{createToken.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "project_id": "{{createProject.response.body.$.data.id}}",
+  "key": "docs/PRD.md",
+  "page": 1,
+  "page_size": 20
+}
+
+### 下载上传的版本：也可以使用登录 Token
+GET {{baseUrl}}/backups/download/{{createProject.response.body.$.data.id}}/{{backup.response.body.$.data.version_id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 使用登录 Token 上传（预期 UNAUTHORIZED）
+POST {{baseUrl}}/backups
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{}
+
+### 删除 API Token：之后上传预期 UNAUTHORIZED
+DELETE {{baseUrl}}/tokens/{{createToken.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 删除项目及其全部备份文件
+DELETE {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}

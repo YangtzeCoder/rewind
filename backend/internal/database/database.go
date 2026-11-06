@@ -11,7 +11,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Open creates the data directory and applies database migrations.
+// Open creates the data directory and initializes the database schema.
 func Open(dataDir string) (*sql.DB, error) {
 	if dataDir == "" {
 		return nil, fmt.Errorf("data directory must not be empty")
@@ -32,14 +32,14 @@ func Open(dataDir string) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
-	if err := migrate(db); err != nil {
+	if err := initializeSchema(db); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("initialize database: %w", err)
 	}
 	return db, nil
 }
 
-func migrate(db *sql.DB) error {
+func initializeSchema(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -49,37 +49,31 @@ func migrate(db *sql.DB) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 2 {
-		return fmt.Errorf("unsupported database schema version %d", version)
-	}
-	if version == 0 {
-		if _, err := tx.Exec(schemaV1); err != nil {
+	switch version {
+	case 0:
+		if _, err := tx.Exec(schema); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("PRAGMA user_version = 1"); err != nil {
 			return err
 		}
-		version = 1
-	}
-	if version == 1 {
-		if _, err := tx.Exec(`ALTER TABLE admin ADD COLUMN username TEXT NOT NULL DEFAULT 'admin';
-CREATE UNIQUE INDEX admin_username ON admin(username);`); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("PRAGMA user_version = 2"); err != nil {
-			return err
-		}
+	case 1:
+		// The schema is already initialized.
+	default:
+		return fmt.Errorf("unsupported database schema version %d", version)
 	}
 	return tx.Commit()
 }
 
 // Times are UTC Unix milliseconds. revoked_at is initialized to created_at by
 // the token creation code and is meaningful as a revocation time only if revoked.
-const schemaV1 = `
+const schema = `
 CREATE TABLE admin (
  id INTEGER PRIMARY KEY CHECK (id = 1), password_hash TEXT NOT NULL,
+ username TEXT NOT NULL DEFAULT 'admin',
  created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
 );
+CREATE UNIQUE INDEX admin_username ON admin(username);
 CREATE TABLE login_tokens (
  id INTEGER PRIMARY KEY, token_hash TEXT NOT NULL UNIQUE,
  created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL,
@@ -102,6 +96,7 @@ CREATE TABLE versions (
  sequence INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  file_id TEXT NOT NULL REFERENCES files(id), size INTEGER NOT NULL CHECK (size >= 0),
  sha256 TEXT NOT NULL, description TEXT NOT NULL DEFAULT '' CHECK (length(description) <= 1024),
+ original_filename TEXT NOT NULL, content_type TEXT NOT NULL,
  created_at INTEGER NOT NULL
 );
 CREATE INDEX versions_file_sequence ON versions(file_id, sequence DESC);

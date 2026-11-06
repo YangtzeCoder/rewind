@@ -55,8 +55,8 @@ func (s *ProjectStore) Update(ctx context.Context, id string, name, description 
 	return p, err
 }
 
-// Delete removes metadata in dependency order. Version content storage must be
-// incorporated here when backups are implemented.
+// Delete removes metadata in dependency order. The caller removes version content
+// after this transaction commits, when new uploads can no longer target the project.
 func (s *ProjectStore) Delete(ctx context.Context, id string) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

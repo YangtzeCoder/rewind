@@ -6,7 +6,7 @@
 
 - REST API 统一使用 `/api/v1` 前缀。
 - 需要认证的接口通过 `Authorization: Bearer <token>` 传递 Token；各接口允许的 Token 类型见 PRD。
-- 文件上传使用 `multipart/form-data`，备份历史查询和下载使用 JSON 请求体。
+- 文件上传使用 `multipart/form-data`，备份历史查询使用 JSON 请求体，下载使用 GET 路径参数。
 
 ## JSON 响应
 
@@ -57,6 +57,8 @@
 
 文件下载成功时直接返回原始二进制内容，不使用 JSON 包装；下载失败时返回统一的 JSON 错误响应。响应内容已经开始发送后，无法再替换为 JSON 错误响应。
 
+`GET /api/v1/backups/download/{project_id}/{version_id}` 接受 API Token 或管理员登录 Token，通过 `Authorization: Bearer <token>` 传递，不接受 URL 参数中的 Token。版本必须属于指定项目。成功时以附件形式返回内容，响应头提供保存的文件名、内容类型和大小；项目或版本不存在返回 `NOT_FOUND`。
+
 ## API Token 管理
 
 Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `name`，返回 `id`、`name`、`created_at` 和 `token`；完整 API Token 以 `api_` 开头，仅在创建时返回一次。`id` 是独立的管理标识，不包含在 API Token 中。
@@ -71,6 +73,33 @@ Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `na
 - `GET /api/v1/projects` 返回项目数组；`page` 和 `page_size` 均为正整数，默认分别为 1 和 20，`page_size` 最大为 100。结果按创建时间倒序、ID 倒序排列。
 - `GET /api/v1/projects/{project_id}` 返回项目详情。
 - `PATCH /api/v1/projects/{project_id}` 接收 `name` 和 `description` 中至少一个字段，返回更新后的项目。字段必须为字符串，名称不能全为空白字符；描述可设为空字符串。
-- `DELETE /api/v1/projects/{project_id}` 删除项目及其关联的文件和版本元数据。当前尚未实现备份文件存储，后续实现时须同步删除版本文件。
+- `DELETE /api/v1/projects/{project_id}` 删除项目及其关联的文件、版本元数据和版本文件。
 
 请求字段无效返回 `INVALID_ARGUMENT`；详情、编辑和删除的项目不存在时返回 `NOT_FOUND`。
+
+## 备份上传
+
+`POST /api/v1/backups` 仅接受 API Token，通过 `Authorization: Bearer <api_token>` 传递；缺少、无效、已删除的 API Token 或使用登录 Token 时返回 `UNAUTHORIZED`。
+
+请求使用 `multipart/form-data`，字段可按任意顺序传递：
+
+| 字段 | 说明 |
+| --- | --- |
+| `project_id` | 必填，已有项目 ID。 |
+| `key` | 必填、非空，保留原始输入，允许特殊字符；与项目 ID 共同定位文件，不作为磁盘路径。 |
+| `file` | 必填，恰好一个带文件名的文件，允许空文件，文件内容流式写入。 |
+| `description` | 可选，默认为空字符串，最多 1024 个 Unicode 字符。 |
+
+文本字段须为 UTF-8，每个字段最多 1 MiB；不接受重复字段或未定义字段。同一项目、同一 `key` 的上传复用 `file_id`，每次生成新的 `version_id` 并独立保存文件，即使内容相同也不去重。
+
+成功返回 `project_id`、`key`、`file_id`、`version_id`、`size`（字节数）、`sha256`（小写十六进制）、`description`、`original_filename`、`content_type` 和 `created_at`（UTC RFC 3339）。文件名取上传文件名的基础名称；`content_type` 保存文件部分的 Content-Type，未提供时使用 `application/octet-stream`。
+
+项目不存在返回 `NOT_FOUND`，请求格式或字段无效返回 `INVALID_ARGUMENT`。处理失败时清理暂存文件；文件提交后元数据事务失败时清理已提交的文件。
+
+## 备份历史
+
+`POST /api/v1/backups/history` 接受 API Token 或管理员登录 Token，通过 `Authorization: Bearer <token>` 传递。JSON 请求体包含必填的非空 `project_id` 和 `key`，以及可选的正整数 `page` 和 `page_size`，默认值分别为 1 和 20，`page_size` 最大为 100。
+
+成功返回数组，每条记录包含 `version_id`、`size`（字节数）、`description` 和 `created_at`（UTC RFC 3339）。版本按创建顺序倒序，第一页的第一条为最新版本；没有更多结果时返回空数组。客户端根据项目 ID 和版本 ID 构造下载路径，响应不包含下载地址。
+
+项目或文件不存在返回 `NOT_FOUND`；请求格式或字段无效返回 `INVALID_ARGUMENT`。

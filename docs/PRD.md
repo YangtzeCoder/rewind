@@ -64,14 +64,14 @@
 ### 3.4 权限范围
 
 - 本阶段不实现角色、项目级授权或其他可配置权限管理；已登录管理员可操作所有项目，API Token 可访问所有项目的 Agent 接口。
-- 服务端按 Token 类型、有效性和接口用途校验：后台管理接口使用登录 Token；Agent 的备份、历史查询及下载接口接受 API Token，后台也可用登录 Token 调用这些接口。
+- 服务端按 Token 类型、有效性和接口用途校验：后台管理接口使用登录 Token；备份上传接口仅接受 API Token；历史查询及下载接口接受 API Token，后台也可用登录 Token 调用历史查询及下载接口。
 
 
 ## 4. REST API
 
 通用请求和响应约定见 [API 设计规范](API_DESIGN.md)。
 
-统一使用 `/api/v1` 前缀。登录接口无需 Token；管理后台接口及 Token 管理接口使用登录 Token；备份、历史查询和下载接口允许使用 API Token，也允许已登录后台使用登录 Token。两类 Token 均通过 `Authorization: Bearer <token>` 传递；不做项目级权限校验。删除 API Token 只影响该 Token，不影响管理员登录 Token。
+统一使用 `/api/v1` 前缀。登录接口无需 Token；管理后台接口及 Token 管理接口使用登录 Token；备份上传接口仅接受 API Token；历史查询和下载接口允许使用 API Token，也允许已登录后台使用登录 Token。两类 Token 均通过 `Authorization: Bearer <token>` 传递；不做项目级权限校验。删除 API Token 只影响该 Token，不影响管理员登录 Token。
 
 JSON 响应统一使用 HTTP 200，包含表示操作是否成功的 `success`。成功且有返回内容时包含 `data`；无返回内容时省略 `data`。返回数组的接口始终返回数组类型的 `data`，无结果时返回空数组 `[]`。失败时包含 `error` 对象，其中 `code` 为字符串错误码、`message` 为错误说明，并省略 `data`；成功时省略 `error`。文件下载成功时返回原始二进制内容，失败时返回上述 JSON 错误。
 
@@ -99,10 +99,10 @@ JSON 响应统一使用 HTTP 200，包含表示操作是否成功的 `success`�
 | 方法 | 路径 | 请求参数 | 功能 |
 | --- | --- | --- | --- |
 | POST | `/api/v1/backups` | `project_id`, `key`, `file`, `description?` | 上传文件备份 |
-| POST | `/api/v1/backups/history` | `project_id`, `key` | 查询版本历史 |
-| POST | `/api/v1/backups/download` | `project_id`, `key`, `version_id?` | 下载指定版本；省略 `version_id` 时下载最新版本 |
+| POST | `/api/v1/backups/history` | `project_id`, `key`, `page?`, `page_size?` | 查询版本历史 |
+| GET | `/api/v1/backups/download/{project_id}/{version_id}` | 路径中的项目 ID、版本 ID | 下载指定版本 |
 
-上传使用 `multipart/form-data`；历史查询和下载使用 JSON Body；`key` 不放入 URL 路径，`project_id` 必填；下载返回文件二进制内容。
+上传使用 `multipart/form-data`；历史查询使用 JSON Body，`key` 不放入 URL 路径；历史记录按创建顺序倒序，下载最新版本可使用第一条记录的版本 ID。下载使用 GET，返回文件二进制内容。
 
 ### 管理后台接口
 
