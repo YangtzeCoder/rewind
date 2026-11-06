@@ -31,6 +31,14 @@ Authorization: Bearer {{login.response.body.$.data.token}}
 GET {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
 Authorization: Bearer {{login.response.body.$.data.token}}
 
+### 系统概览
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 项目文件列表（可选 key 字面子串筛选）
+GET {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}/files?page=1&page_size=20&key=docs
+Authorization: Bearer {{login.response.body.$.data.token}}
+
 ### 部分更新项目
 PATCH {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
 Authorization: Bearer {{login.response.body.$.data.token}}

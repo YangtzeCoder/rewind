@@ -40,8 +40,60 @@ func registerProjectRoutes(router *gin.RouterGroup, authService *auth.Service, s
 	group.POST("", h.create)
 	group.GET("", h.list)
 	group.GET("/:project_id", h.get)
+	group.GET("/:project_id/files", h.listFiles)
 	group.PATCH("/:project_id", h.update)
 	group.DELETE("/:project_id", h.delete)
+}
+
+func (h *projectHandler) listFiles(c *gin.Context) {
+	page, err := paginationValue(c, "page", 1, math.MaxInt64)
+	if err != nil {
+		failure(c, errInvalidArgument, "invalid pagination parameters")
+		return
+	}
+	size, err := paginationValue(c, "page_size", 20, 100)
+	if err != nil || page-1 > math.MaxInt64/size {
+		failure(c, errInvalidArgument, "invalid pagination parameters")
+		return
+	}
+	filters := c.Request.URL.Query()["key"]
+	if len(filters) > 1 {
+		failure(c, errInvalidArgument, "key must be specified at most once")
+		return
+	}
+	filter := ""
+	if len(filters) == 1 {
+		filter = filters[0]
+	}
+	files, err := h.store.ListFiles(c.Request.Context(), c.Param("project_id"), filter, size, (page-1)*size)
+	if err != nil {
+		projectError(c, err)
+		return
+	}
+	type latestVersionResponse struct {
+		VersionID string `json:"version_id"`
+		Size      int64  `json:"size"`
+		CreatedAt string `json:"created_at"`
+	}
+	type fileResponse struct {
+		ID            string                 `json:"id"`
+		Key           string                 `json:"key"`
+		CreatedAt     string                 `json:"created_at"`
+		UpdatedAt     string                 `json:"updated_at"`
+		VersionCount  int64                  `json:"version_count"`
+		LatestVersion *latestVersionResponse `json:"latest_version"`
+	}
+	result := make([]fileResponse, 0, len(files))
+	for _, f := range files {
+		item := fileResponse{ID: f.ID, Key: f.Key, CreatedAt: time.UnixMilli(f.CreatedAt).UTC().Format(time.RFC3339Nano),
+			UpdatedAt: time.UnixMilli(f.UpdatedAt).UTC().Format(time.RFC3339Nano), VersionCount: f.VersionCount}
+		if f.LatestVersionID.Valid {
+			item.LatestVersion = &latestVersionResponse{VersionID: f.LatestVersionID.String, Size: f.LatestSize.Int64,
+				CreatedAt: time.UnixMilli(f.LatestTime.Int64).UTC().Format(time.RFC3339Nano)}
+		}
+		result = append(result, item)
+	}
+	success(c, result)
 }
 
 // projectInput distinguishes absent fields from explicit null values.

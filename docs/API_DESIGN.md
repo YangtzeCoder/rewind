@@ -77,6 +77,16 @@ Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `na
 
 请求字段无效返回 `INVALID_ARGUMENT`；详情、编辑和删除的项目不存在时返回 `NOT_FOUND`。
 
+### 系统概览
+
+`GET /api/v1/dashboard` 只接受登录 Token。返回 `project_count`、`file_count`、`version_count` 和 `total_size`（所有版本文件大小之和，单位为字节）；没有数据时均为 0。同一文件的各版本分别计入版本数量和总大小。
+
+### 项目文件列表
+
+`GET /api/v1/projects/{project_id}/files` 只接受登录 Token，返回文件数组。查询参数 `page` 和 `page_size` 均为正整数，默认分别为 1 和 20，`page_size` 最大为 100。可选的 `key` 是区分大小写的字面子串筛选，空值表示不筛选，特殊字符按字面匹配。结果按文件更新时间倒序、文件 ID 倒序排列。
+
+每条记录包含 `id`（文件 ID）、`key`、`created_at`、`updated_at`、`version_count` 和 `latest_version`。最新版本按版本创建顺序确定，包含 `version_id`、`size`（字节）和 `created_at`；文件没有版本时 `latest_version` 为 `null`。时间采用 UTC RFC 3339 格式。项目不存在返回 `NOT_FOUND`；分页参数无效或重复的 `key` 返回 `INVALID_ARGUMENT`；没有结果时返回空数组。
+
 ## 备份上传
 
 `POST /api/v1/backups` 仅接受 API Token，通过 `Authorization: Bearer <api_token>` 传递；缺少、无效、已删除的 API Token 或使用登录 Token 时返回 `UNAUTHORIZED`。

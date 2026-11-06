@@ -39,9 +39,19 @@ func Run(listen, dataDir string) error {
 	router.NoRoute(func(c *gin.Context) { failure(c, errNotFound, "not found") })
 	router.NoMethod(func(c *gin.Context) { failure(c, errMethodNotAllowed, "method not allowed") })
 	api := router.Group("/api/v1")
+	projects := database.NewProjectStore(db)
+	api.GET("/dashboard", (&authHandler{service: authService}).authenticate, func(c *gin.Context) {
+		stats, err := projects.Dashboard(c.Request.Context())
+		if err != nil {
+			internalError(c)
+			return
+		}
+		success(c, gin.H{"project_count": stats.ProjectCount, "file_count": stats.FileCount,
+			"version_count": stats.VersionCount, "total_size": stats.TotalSize})
+	})
 	registerAuthRoutes(api, authService)
 	registerTokenRoutes(api, authService, database.NewTokenStore(db))
-	registerProjectRoutes(api, authService, database.NewProjectStore(db), files)
+	registerProjectRoutes(api, authService, projects, files)
 	registerBackupRoutes(api, authService, database.NewTokenStore(db), database.NewBackupStore(db), files)
 	return router.Run(listen)
 }
