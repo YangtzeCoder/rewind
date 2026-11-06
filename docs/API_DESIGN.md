@@ -56,3 +56,9 @@
 ## 文件下载
 
 文件下载成功时直接返回原始二进制内容，不使用 JSON 包装；下载失败时返回统一的 JSON 错误响应。响应内容已经开始发送后，无法再替换为 JSON 错误响应。
+
+## API Token 管理
+
+Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `name`，返回 `id`、`name`、`created_at` 和 `token`；完整 API Token 以 `api_` 开头，仅在创建时返回一次。`id` 是独立的管理标识，不包含在 API Token 中。
+
+`GET /api/v1/tokens` 返回包含 `id`、`name` 和 `created_at` 的数组，不返回 Token 或其哈希。查询参数 `page` 和 `page_size` 均为正整数，默认分别为 1 和 20，`page_size` 最大为 100；按创建时间倒序、ID 倒序排列。`DELETE /api/v1/tokens/{token_id}` 删除指定 Token，不存在时返回 `NOT_FOUND`。时间采用 UTC RFC 3339 格式。

@@ -31,5 +31,6 @@ func Run(listen, dataDir string) error {
 	router.NoMethod(func(c *gin.Context) { failure(c, errMethodNotAllowed, "method not allowed") })
 	api := router.Group("/api/v1")
 	registerAuthRoutes(api, authService)
+	registerTokenRoutes(api, authService, database.NewTokenStore(db))
 	return router.Run(listen)
 }

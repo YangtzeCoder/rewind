@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:8080/api/v1
+@username = admin
+@password = 123456
+
+### 登录：先执行此请求
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### 创建 API Token：token 明文仅在此响应中返回一次，请妥善保存
+# @name createToken
+POST {{baseUrl}}/tokens
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "name": "my agent"
+}
+
+### 查询列表（不包含 token 明文）
+GET {{baseUrl}}/tokens?page=1&page_size=20
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 使用 API Token 调用管理接口（预期 UNAUTHORIZED）
+GET {{baseUrl}}/tokens
+Authorization: Bearer {{createToken.response.body.$.data.token}}
+
+### 无效分页参数（预期 INVALID_ARGUMENT）
+GET {{baseUrl}}/tokens?page=0
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 删除刚创建的 Token（重复执行预期 NOT_FOUND）
+DELETE {{baseUrl}}/tokens/{{createToken.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
