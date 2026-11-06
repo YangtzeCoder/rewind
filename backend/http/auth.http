@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:8080/api/v1
+@username = admin
+@password = 123456
+@newPassword = 123456
+
+### 登录：先发送此请求，后续请求会引用返回的 token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### 查询当前管理员（预期 success: true）
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 修改密码（预期 success: true；现有登录 token 继续有效）
+# 修改成功后，将上方 password 改为 newPassword 的值，以便下次登录。
+POST {{baseUrl}}/auth/password
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "current_password": "{{password}}",
+  "new_password": "{{newPassword}}"
+}
+
+### 退出当前登录（预期 success: true；之后查询应返回 UNAUTHORIZED）
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{login.response.body.$.data.token}}

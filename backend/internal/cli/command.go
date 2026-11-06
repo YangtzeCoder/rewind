@@ -30,9 +30,9 @@ func newServeCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 	listen := cmd.Flags().String("listen", "0.0.0.0:8080", "listen address")
-	cmd.Flags().String("data-dir", "/data", "data directory")
+	dataDir := cmd.Flags().String("data-dir", "data", "data directory")
 	cmd.RunE = func(*cobra.Command, []string) error {
-		return server.Run(*listen)
+		return server.Run(*listen, *dataDir)
 	}
 	return cmd
 }

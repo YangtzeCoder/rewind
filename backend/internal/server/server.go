@@ -1,11 +1,35 @@
 package server
 
-import "github.com/gin-gonic/gin"
+import (
+	"context"
 
-func Run(listen string) error {
-	router := gin.Default()
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	"rewind/internal/auth"
+	"rewind/internal/database"
+
+	"github.com/gin-gonic/gin"
+)
+
+func Run(listen, dataDir string) error {
+	db, err := database.Open(dataDir)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	authService := auth.NewService(database.NewAuthStore(db))
+	if err := authService.Initialize(context.Background()); err != nil {
+		return err
+	}
+	router := gin.New()
+	router.Use(gin.Logger(), gin.CustomRecovery(func(c *gin.Context, _ any) {
+		if !c.Writer.Written() {
+			failure(c, errInternal, "internal server error")
+		}
+		c.Abort()
+	}))
+	router.HandleMethodNotAllowed = true
+	router.NoRoute(func(c *gin.Context) { failure(c, errNotFound, "not found") })
+	router.NoMethod(func(c *gin.Context) { failure(c, errMethodNotAllowed, "method not allowed") })
+	api := router.Group("/api/v1")
+	registerAuthRoutes(api, authService)
 	return router.Run(listen)
 }
