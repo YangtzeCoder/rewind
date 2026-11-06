@@ -19,12 +19,6 @@ import (
 
 type tokenHandler struct{ store *database.TokenStore }
 
-type tokenResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
-}
-
 func registerTokenRoutes(router *gin.RouterGroup, authService *auth.Service, store *database.TokenStore) {
 	h := &tokenHandler{store: store}
 	group := router.Group("/tokens")
@@ -35,10 +29,15 @@ func registerTokenRoutes(router *gin.RouterGroup, authService *auth.Service, sto
 }
 
 func (h *tokenHandler) create(c *gin.Context) {
-	var input struct {
+	type createTokenRequest struct {
 		Name string `json:"name" binding:"required"`
 	}
-	if c.ShouldBindJSON(&input) != nil || strings.TrimSpace(input.Name) == "" {
+	var input createTokenRequest
+	if c.ShouldBindJSON(&input) != nil {
+		failure(c, errInvalidArgument, "name is required")
+		return
+	}
+	if strings.TrimSpace(input.Name) == "" {
 		failure(c, errInvalidArgument, "name is required")
 		return
 	}
@@ -79,9 +78,14 @@ func (h *tokenHandler) list(c *gin.Context) {
 		internalError(c)
 		return
 	}
-	result := make([]tokenResponse, 0, len(tokens))
+	type listTokenResponse struct {
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		CreatedAt string `json:"created_at"`
+	}
+	result := make([]listTokenResponse, 0, len(tokens))
 	for _, token := range tokens {
-		result = append(result, tokenResponse{ID: token.ID, Name: token.Name, CreatedAt: time.UnixMilli(token.CreatedAt).UTC().Format(time.RFC3339Nano)})
+		result = append(result, listTokenResponse{ID: token.ID, Name: token.Name, CreatedAt: time.UnixMilli(token.CreatedAt).UTC().Format(time.RFC3339Nano)})
 	}
 	success(c, result)
 }

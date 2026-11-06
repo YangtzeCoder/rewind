@@ -24,10 +24,11 @@ func registerAuthRoutes(router *gin.RouterGroup, service *auth.Service) {
 type authHandler struct{ service *auth.Service }
 
 func (h *authHandler) login(c *gin.Context) {
-	var input struct {
+	type loginRequest struct {
 		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
+	var input loginRequest
 	if c.ShouldBindJSON(&input) != nil {
 		failure(c, errInvalidArgument, "username and password are required")
 		return
@@ -65,11 +66,16 @@ func (h *authHandler) logout(c *gin.Context) {
 }
 
 func (h *authHandler) password(c *gin.Context) {
-	var input struct {
+	type passwordRequest struct {
 		Current string `json:"current_password" binding:"required"`
 		New     string `json:"new_password" binding:"required"`
 	}
-	if c.ShouldBindJSON(&input) != nil || len(input.New) > 72 {
+	var input passwordRequest
+	if c.ShouldBindJSON(&input) != nil {
+		failure(c, errInvalidArgument, "current_password and new_password are required; new_password must be at most 72 bytes")
+		return
+	}
+	if len(input.New) > 72 {
 		failure(c, errInvalidArgument, "current_password and new_password are required; new_password must be at most 72 bytes")
 		return
 	}

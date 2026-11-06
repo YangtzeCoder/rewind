@@ -75,13 +75,18 @@ func backupAuth(tokens *database.TokenStore, authService *auth.Service) gin.Hand
 }
 
 func (h *backupHandler) history(c *gin.Context) {
-	var input struct {
+	type backupHistoryRequest struct {
 		ProjectID string          `json:"project_id"`
 		Key       string          `json:"key"`
 		Page      json.RawMessage `json:"page"`
 		PageSize  json.RawMessage `json:"page_size"`
 	}
-	if c.ShouldBindJSON(&input) != nil || input.ProjectID == "" || input.Key == "" {
+	var input backupHistoryRequest
+	if c.ShouldBindJSON(&input) != nil {
+		failure(c, errInvalidArgument, "project_id and key are required")
+		return
+	}
+	if input.ProjectID == "" || input.Key == "" {
 		failure(c, errInvalidArgument, "project_id and key are required")
 		return
 	}
@@ -183,8 +188,15 @@ func (h *backupHandler) create(c *gin.Context) {
 		}
 	}()
 	var info storage.FileInfo
-	var filename, contentType string
-	fields := make(map[string]string)
+	type createBackupRequest struct {
+		ProjectID   string
+		Key         string
+		Description string
+		Filename    string
+		ContentType string
+	}
+	var input createBackupRequest
+	fields := make(map[string]struct{})
 	for {
 		part, err := reader.NextPart()
 		if err == io.EOF {
@@ -200,9 +212,9 @@ func (h *backupHandler) create(c *gin.Context) {
 				failure(c, errInvalidArgument, "exactly one file with a filename is required")
 				return
 			}
-			filename, contentType = part.FileName(), part.Header.Get("Content-Type")
-			if contentType == "" {
-				contentType = "application/octet-stream"
+			input.Filename, input.ContentType = part.FileName(), part.Header.Get("Content-Type")
+			if input.ContentType == "" {
+				input.ContentType = "application/octet-stream"
 			}
 			staged, info, err = h.files.Stage(ctx, part)
 			if err != nil {
@@ -226,9 +238,21 @@ func (h *backupHandler) create(c *gin.Context) {
 			failure(c, errInvalidArgument, "form fields must be valid UTF-8 and at most 1 MiB each")
 			return
 		}
-		fields[name] = string(value)
+		fields[name] = struct{}{}
+		switch name {
+		case "project_id":
+			input.ProjectID = string(value)
+		case "key":
+			input.Key = string(value)
+		case "description":
+			input.Description = string(value)
+		}
 	}
-	if fields["project_id"] == "" || fields["key"] == "" || staged == nil || utf8.RuneCountInString(fields["description"]) > 1024 {
+	if input.ProjectID == "" || input.Key == "" || staged == nil {
+		failure(c, errInvalidArgument, "project_id, key and file are required; description must be at most 1024 characters")
+		return
+	}
+	if utf8.RuneCountInString(input.Description) > 1024 {
 		failure(c, errInvalidArgument, "project_id, key and file are required; description must be at most 1024 characters")
 		return
 	}
@@ -243,14 +267,14 @@ func (h *backupHandler) create(c *gin.Context) {
 		return
 	}
 	b := database.Backup{
-		ProjectID: fields["project_id"], Key: fields["key"], FileID: fileID, VersionID: versionID,
-		Size: info.Size, SHA256: info.SHA256, Description: fields["description"],
-		OriginalFilename: filename, ContentType: contentType, CreatedAt: time.Now().UnixMilli(),
+		ProjectID: input.ProjectID, Key: input.Key, FileID: fileID, VersionID: versionID,
+		Size: info.Size, SHA256: info.SHA256, Description: input.Description,
+		OriginalFilename: input.Filename, ContentType: input.ContentType, CreatedAt: time.Now().UnixMilli(),
 	}
 	var published bool
 	var storageKey storage.VersionKey
 	b, err = h.store.Create(ctx, b, func(fileID string) error {
-		storageKey = storage.VersionKey{ProjectID: fields["project_id"], FileID: fileID, VersionID: versionID}
+		storageKey = storage.VersionKey{ProjectID: input.ProjectID, FileID: fileID, VersionID: versionID}
 		if err := staged.Commit(ctx, storageKey); err != nil {
 			return err
 		}

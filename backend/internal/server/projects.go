@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"math"
 	"strings"
@@ -19,18 +18,6 @@ import (
 type projectHandler struct {
 	store *database.ProjectStore
 	files storage.Store
-}
-
-type projectResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-
-func projectJSON(p database.Project) projectResponse {
-	return projectResponse{p.ID, p.Name, p.Description, time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano), time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)}
 }
 
 func registerProjectRoutes(router *gin.RouterGroup, authService *auth.Service, store *database.ProjectStore, files storage.Store) {
@@ -96,30 +83,17 @@ func (h *projectHandler) listFiles(c *gin.Context) {
 	success(c, result)
 }
 
-// projectInput distinguishes absent fields from explicit null values.
-func projectInput(c *gin.Context) (name, description *string, ok bool) {
-	var input map[string]json.RawMessage
-	if c.ShouldBindJSON(&input) != nil || input == nil {
-		return nil, nil, false
-	}
-	for key, target := range map[string]**string{"name": &name, "description": &description} {
-		if raw, exists := input[key]; exists {
-			var value string
-			if string(raw) == "null" || json.Unmarshal(raw, &value) != nil {
-				return nil, nil, false
-			}
-			*target = &value
-		}
-	}
-	if name != nil && strings.TrimSpace(*name) == "" {
-		return nil, nil, false
-	}
-	return name, description, true
-}
-
 func (h *projectHandler) create(c *gin.Context) {
-	name, description, ok := projectInput(c)
-	if !ok || name == nil {
+	type createProjectRequest struct {
+		Name        *string `json:"name" binding:"required"`
+		Description *string `json:"description"`
+	}
+	var input createProjectRequest
+	if c.ShouldBindJSON(&input) != nil {
+		failure(c, errInvalidArgument, "name is required and fields must be valid strings")
+		return
+	}
+	if strings.TrimSpace(*input.Name) == "" {
 		failure(c, errInvalidArgument, "name is required and fields must be valid strings")
 		return
 	}
@@ -129,15 +103,24 @@ func (h *projectHandler) create(c *gin.Context) {
 		return
 	}
 	now := time.Now().UTC().UnixMilli()
-	p := database.Project{ID: projectID, Name: *name, CreatedAt: now, UpdatedAt: now}
-	if description != nil {
-		p.Description = *description
+	p := database.Project{ID: projectID, Name: *input.Name, CreatedAt: now, UpdatedAt: now}
+	if input.Description != nil {
+		p.Description = *input.Description
 	}
 	if err := h.store.Create(c.Request.Context(), p); err != nil {
 		internalError(c)
 		return
 	}
-	success(c, projectJSON(p))
+	type createProjectResponse struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+	}
+	success(c, createProjectResponse{ID: p.ID, Name: p.Name, Description: p.Description,
+		CreatedAt: time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano),
+		UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)})
 }
 
 func (h *projectHandler) list(c *gin.Context) {
@@ -156,9 +139,18 @@ func (h *projectHandler) list(c *gin.Context) {
 		internalError(c)
 		return
 	}
-	result := make([]projectResponse, 0, len(projects))
+	type listProjectResponse struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+	}
+	result := make([]listProjectResponse, 0, len(projects))
 	for _, p := range projects {
-		result = append(result, projectJSON(p))
+		result = append(result, listProjectResponse{ID: p.ID, Name: p.Name, Description: p.Description,
+			CreatedAt: time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano),
+			UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)})
 	}
 	success(c, result)
 }
@@ -169,21 +161,51 @@ func (h *projectHandler) get(c *gin.Context) {
 		projectError(c, err)
 		return
 	}
-	success(c, projectJSON(p))
+	type getProjectResponse struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+	}
+	success(c, getProjectResponse{ID: p.ID, Name: p.Name, Description: p.Description,
+		CreatedAt: time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano),
+		UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)})
 }
 
 func (h *projectHandler) update(c *gin.Context) {
-	name, description, ok := projectInput(c)
-	if !ok || (name == nil && description == nil) {
+	type updateProjectRequest struct {
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+	}
+	var input updateProjectRequest
+	if c.ShouldBindJSON(&input) != nil {
 		failure(c, errInvalidArgument, "at least one valid field is required")
 		return
 	}
-	p, err := h.store.Update(c.Request.Context(), c.Param("project_id"), name, description, time.Now().UTC().UnixMilli())
+	if input.Name == nil && input.Description == nil {
+		failure(c, errInvalidArgument, "at least one valid field is required")
+		return
+	}
+	if input.Name != nil && strings.TrimSpace(*input.Name) == "" {
+		failure(c, errInvalidArgument, "at least one valid field is required")
+		return
+	}
+	p, err := h.store.Update(c.Request.Context(), c.Param("project_id"), input.Name, input.Description, time.Now().UTC().UnixMilli())
 	if err != nil {
 		projectError(c, err)
 		return
 	}
-	success(c, projectJSON(p))
+	type updateProjectResponse struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
+		UpdatedAt   string `json:"updated_at"`
+	}
+	success(c, updateProjectResponse{ID: p.ID, Name: p.Name, Description: p.Description,
+		CreatedAt: time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano),
+		UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)})
 }
 
 func (h *projectHandler) delete(c *gin.Context) {
