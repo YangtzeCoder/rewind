@@ -1,0 +1,72 @@
+@baseUrl = http://localhost:8080/api/v1
+@username = admin
+@password = 123456
+
+### 登录：先执行此请求
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### 创建项目
+# @name createProject
+POST {{baseUrl}}/projects
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "name": "示例项目",
+  "description": "项目管理接口测试"
+}
+
+### 项目列表
+GET {{baseUrl}}/projects?page=1&page_size=20
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 项目详情
+GET {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 部分更新项目
+PATCH {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "description": "更新后的描述"
+}
+
+### 无效项目名称（预期 INVALID_ARGUMENT）
+POST {{baseUrl}}/projects
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "name": "  "
+}
+
+### 空更新（预期 INVALID_ARGUMENT）
+PATCH {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{}
+
+### 无效分页（预期 INVALID_ARGUMENT）
+GET {{baseUrl}}/projects?page=0
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 未认证（预期 UNAUTHORIZED）
+GET {{baseUrl}}/projects
+
+### 不存在的项目（预期 NOT_FOUND）
+GET {{baseUrl}}/projects/PRG_notfound
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 删除项目（重复执行预期 NOT_FOUND）
+DELETE {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}
+Authorization: Bearer {{login.response.body.$.data.token}}

@@ -62,3 +62,15 @@
 Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `name`，返回 `id`、`name`、`created_at` 和 `token`；完整 API Token 以 `api_` 开头，仅在创建时返回一次。`id` 是独立的管理标识，不包含在 API Token 中。
 
 `GET /api/v1/tokens` 返回包含 `id`、`name` 和 `created_at` 的数组，不返回 Token 或其哈希。查询参数 `page` 和 `page_size` 均为正整数，默认分别为 1 和 20，`page_size` 最大为 100；按创建时间倒序、ID 倒序排列。`DELETE /api/v1/tokens/{token_id}` 删除指定 Token，不存在时返回 `NOT_FOUND`。时间采用 UTC RFC 3339 格式。
+
+## 项目管理
+
+项目管理接口只接受登录 Token。项目对象包含 `id`、`name`、`description`、`created_at` 和 `updated_at`，时间采用 UTC RFC 3339 格式。名称不要求唯一，名称和描述保留原始输入。
+
+- `POST /api/v1/projects` 接收必填的非空 `name` 和可选的 `description`（默认为空字符串），返回创建的项目。名称不能全为空白字符。
+- `GET /api/v1/projects` 返回项目数组；`page` 和 `page_size` 均为正整数，默认分别为 1 和 20，`page_size` 最大为 100。结果按创建时间倒序、ID 倒序排列。
+- `GET /api/v1/projects/{project_id}` 返回项目详情。
+- `PATCH /api/v1/projects/{project_id}` 接收 `name` 和 `description` 中至少一个字段，返回更新后的项目。字段必须为字符串，名称不能全为空白字符；描述可设为空字符串。
+- `DELETE /api/v1/projects/{project_id}` 删除项目及其关联的文件和版本元数据。当前尚未实现备份文件存储，后续实现时须同步删除版本文件。
+
+请求字段无效返回 `INVALID_ARGUMENT`；详情、编辑和删除的项目不存在时返回 `NOT_FOUND`。

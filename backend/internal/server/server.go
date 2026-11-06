@@ -32,5 +32,6 @@ func Run(listen, dataDir string) error {
 	api := router.Group("/api/v1")
 	registerAuthRoutes(api, authService)
 	registerTokenRoutes(api, authService, database.NewTokenStore(db))
+	registerProjectRoutes(api, authService, database.NewProjectStore(db))
 	return router.Run(listen)
 }
