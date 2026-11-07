@@ -4,6 +4,8 @@ WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+COPY scripts/package-skills.mjs /src/scripts/package-skills.mjs
+COPY skills/rewind/ /src/skills/rewind/
 RUN npm run build
 
 FROM --platform=$BUILDPLATFORM golang:1.26.4-alpine AS backend
