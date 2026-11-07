@@ -39,6 +39,6 @@ for target in darwin/arm64 windows/amd64 windows/arm64 linux/amd64 linux/arm64; 
   if [ "$os" = windows ]; then
     binary="$binary.exe"
   fi
-  GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -ldflags "-X main.Version=$version" -o "$output/$binary" ./cmd/rewind
+  GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.Version=$version" -o "$output/$binary" ./cmd/rewind
   printf 'Built %s\n' "$output/$binary"
 done
