@@ -47,7 +47,7 @@ watch(() => route.params.id, (value) => { if (value) { page.value = 1; search.va
 <template>
   <section class="dashboard">
     <RouterLink class="back-link" :to="{ name: 'projects' }">← 返回项目</RouterLink>
-    <div class="page-heading"><div><div class="eyebrow">PROJECT</div><h1>{{ project?.name || '项目详情' }}</h1><p>{{ project?.description || '查看项目中的文件和备份版本。' }}</p><small v-if="project" class="muted">{{ project.id }}</small></div></div>
+    <div class="page-heading"><div><div class="eyebrow">PROJECT</div><h1>{{ project?.name || '项目详情' }}</h1><p>{{ project?.description || '查看项目中的文件和备份版本。' }}</p></div></div>
     <p v-if="error" class="form-error" role="alert">{{ error }} <button class="text-button" @click="load">重试</button></p>
     <div class="panel list-panel">
       <div class="panel-title"><h2>文件</h2><form class="search-form" @submit.prevent="filter"><el-input v-model="search" placeholder="按文件 key 筛选" aria-label="按文件 key 筛选" clearable /><el-button native-type="submit">搜索</el-button></form></div>
@@ -57,7 +57,7 @@ watch(() => route.params.id, (value) => { if (value) { page.value = 1; search.va
     </div>
     <div v-if="selected" class="panel list-panel" id="history"><div class="panel-title"><div><h2>版本历史</h2><p class="muted key-text">{{ selected.key }}</p></div><button class="text-button" @click="selected = undefined">关闭</button></div>
       <p v-if="historyLoading" class="empty-text">正在加载…</p><p v-else-if="!versions.length" class="empty-text">没有更多版本。</p>
-      <div v-for="version in versions" v-else :key="version.version_id" class="list-row"><div class="row-main"><strong class="item-title">{{ version.version_id }}</strong><p>{{ version.description || '暂无描述' }}</p><small>{{ formatDate(version.created_at) }} · {{ formatSize(version.size) }}</small></div><button class="text-button" :disabled="!!downloading" @click="download(version.version_id)">{{ downloading === version.version_id ? '下载中…' : '下载' }}</button></div>
+      <div v-for="version in versions" v-else :key="version.version_id" class="list-row"><div class="row-main"><strong class="item-title">{{ version.description || '暂无备注' }}</strong><p>备份于 {{ formatDate(version.created_at) }} · {{ formatSize(version.size) }}</p></div><button class="text-button" :disabled="!!downloading" @click="download(version.version_id)">{{ downloading === version.version_id ? '下载中…' : '下载' }}</button></div>
       <div class="pagination"><el-button :disabled="historyPage === 1 || historyLoading" @click="changeHistoryPage(-1)">上一页</el-button><span>第 {{ historyPage }} 页</span><el-button :disabled="versions.length < 20 || historyLoading" @click="changeHistoryPage(1)">下一页</el-button></div>
     </div>
   </section>

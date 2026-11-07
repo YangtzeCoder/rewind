@@ -14,6 +14,15 @@ const editing = ref<Project | null>(null)
 const showForm = ref(false)
 const name = ref('')
 const description = ref('')
+const copiedId = ref('')
+async function copyId(id: string) {
+  try {
+    await navigator.clipboard.writeText(id)
+    copiedId.value = id
+  } catch {
+    error.value = '复制失败，请手动选择并复制项目 ID。'
+  }
+}
 async function load() {
   loading.value = true; error.value = ''; projects.value = []
   try { projects.value = await api.listProjects({ page: page.value, page_size: 20 }) } catch (e) { error.value = errorMessage(e) } finally { loading.value = false }
@@ -50,7 +59,7 @@ onMounted(load)
     <div class="panel list-panel">
       <p v-if="loading" class="empty-text">正在加载…</p><p v-else-if="!projects.length" class="empty-text">{{ page === 1 ? '还没有项目，创建一个项目开始备份。' : '没有更多项目。' }}</p>
       <div v-for="project in projects" v-else :key="project.id" class="list-row">
-        <div class="row-main"><RouterLink class="item-title" :to="{ name: 'project', params: { id: project.id } }">{{ project.name }}</RouterLink><p>{{ project.description || '暂无描述' }}</p><small>{{ project.id }} · 创建于 {{ formatDate(project.created_at) }}</small></div>
+        <div class="row-main"><div class="project-title"><RouterLink class="item-title" :to="{ name: 'project', params: { id: project.id } }">{{ project.name }}</RouterLink><span class="project-id">{{ project.id }}</span><button type="button" class="text-button copy-id" :aria-label="`复制项目 ${project.name} 的 ID`" @click="copyId(project.id)">{{ copiedId === project.id ? '已复制' : '复制' }}</button></div><p>{{ project.description || '暂无描述' }}</p><small>创建于 {{ formatDate(project.created_at) }}</small></div>
         <div class="row-actions"><button class="text-button" @click="openForm(project)">编辑</button><button class="text-button danger" @click="remove(project)">删除</button></div>
       </div>
       <div class="pagination"><el-button :disabled="page === 1 || loading" @click="changePage(-1)">上一页</el-button><span>第 {{ page }} 页</span><el-button :disabled="projects.length < 20 || loading" @click="changePage(1)">下一页</el-button></div>
