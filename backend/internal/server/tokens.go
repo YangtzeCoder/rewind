@@ -103,7 +103,7 @@ func paginationValue(c *gin.Context, name string, fallback, max int64) (int64, e
 }
 
 func (h *tokenHandler) delete(c *gin.Context) {
-	deleted, err := h.store.Delete(c.Request.Context(), c.Param("token_id"))
+	deleted, err := h.store.Delete(c.Request.Context(), strings.ToLower(c.Param("token_id")))
 	if err != nil {
 		internalError(c)
 		return

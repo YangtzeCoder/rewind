@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -59,7 +58,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 	if _, err := rand.Read(secret[:]); err != nil {
 		return "", time.Time{}, err
 	}
-	token := loginPrefix + base64.RawURLEncoding.EncodeToString(secret[:])
+	token := loginPrefix + hex.EncodeToString(secret[:])
 	now := time.Now().UTC()
 	expires := now.Add(sessionLifetime)
 	ok, err := s.store.CreateSession(ctx, username, hash, hashToken(token), now.UnixMilli(), expires.UnixMilli())
@@ -73,7 +72,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 }
 
 func (s *Service) Authenticate(ctx context.Context, token string) error {
-	if !strings.HasPrefix(token, loginPrefix) {
+	if !strings.HasPrefix(strings.ToLower(token), loginPrefix) {
 		return ErrUnauthorized
 	}
 	now := time.Now().UnixMilli()
@@ -119,6 +118,6 @@ func (s *Service) Username(ctx context.Context) (string, error) {
 }
 
 func hashToken(token string) string {
-	hash := sha256.Sum256([]byte(token))
+	hash := sha256.Sum256([]byte(strings.ToLower(token)))
 	return hex.EncodeToString(hash[:])
 }

@@ -120,14 +120,14 @@ JSON 响应统一使用 HTTP 200，包含表示操作是否成功的 `success`�
 
 ## 5. ID 规范
 
-普通实体 ID 采用类型前缀和 16 位随机字符。
+普通实体 ID 采用小写类型前缀和 16 位数字或小写字母组成的随机字符。实体 ID、API Token 和管理员登录 Token 在请求中均忽略大小写，生成的 Token 全部为小写；文件 key 保持区分大小写。
 
 | 实体          | 格式                            |
 | ------------- | ------------------------------- |
-| Project       | `PRG_<16位随机ID>`              |
-| File          | `FILE_<16位随机ID>`             |
-| Version       | `VER_<16位随机ID>`              |
-| API Token     | `TKN_<16位随机ID>`              |
+| Project       | `prj_<16位随机ID>`              |
+| File          | `file_<16位随机ID>`             |
+| Version       | `ver_<16位随机ID>`              |
+| API Token     | `tkn_<16位随机ID>`              |
 
 API Token 的完整凭证包含独立的安全随机密钥，具体编码由接口设计确定。
 

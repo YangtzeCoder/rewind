@@ -44,7 +44,7 @@ func backupAuth(tokens *database.TokenStore, authService *auth.Service) gin.Hand
 			c.Abort()
 			return
 		}
-		if authService != nil && strings.HasPrefix(parts[1], "login_") {
+		if authService != nil && strings.HasPrefix(strings.ToLower(parts[1]), "login_") {
 			if err := authService.Authenticate(c.Request.Context(), parts[1]); err != nil {
 				authError(c, err, errUnauthorized, "unauthorized")
 				c.Abort()
@@ -53,12 +53,13 @@ func backupAuth(tokens *database.TokenStore, authService *auth.Service) gin.Hand
 			c.Next()
 			return
 		}
-		if !strings.HasPrefix(parts[1], "API_") {
+		credential := strings.ToLower(parts[1])
+		if !strings.HasPrefix(credential, "api_") {
 			failure(c, errUnauthorized, "unauthorized")
 			c.Abort()
 			return
 		}
-		hash := sha256.Sum256([]byte(parts[1]))
+		hash := sha256.Sum256([]byte(credential))
 		exists, err := tokens.ExistsHash(c.Request.Context(), hex.EncodeToString(hash[:]))
 		if err != nil {
 			internalError(c)
@@ -97,7 +98,7 @@ func (h *backupHandler) history(c *gin.Context) {
 		failure(c, errInvalidArgument, "invalid pagination parameters")
 		return
 	}
-	versions, err := h.store.History(c.Request.Context(), input.ProjectID, input.Key, size, (page-1)*size)
+	versions, err := h.store.History(c.Request.Context(), strings.ToLower(input.ProjectID), input.Key, size, (page-1)*size)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			failure(c, errNotFound, "file not found")
@@ -120,7 +121,7 @@ func (h *backupHandler) history(c *gin.Context) {
 }
 
 func (h *backupHandler) download(c *gin.Context) {
-	projectID, versionID := c.Param("project_id"), c.Param("version_id")
+	projectID, versionID := strings.ToLower(c.Param("project_id")), strings.ToLower(c.Param("version_id"))
 	b, err := h.store.Version(c.Request.Context(), projectID, versionID)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
@@ -241,7 +242,7 @@ func (h *backupHandler) create(c *gin.Context) {
 		fields[name] = struct{}{}
 		switch name {
 		case "project_id":
-			input.ProjectID = string(value)
+			input.ProjectID = strings.ToLower(string(value))
 		case "key":
 			input.Key = string(value)
 		case "description":

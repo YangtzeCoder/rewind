@@ -52,7 +52,7 @@ func (h *projectHandler) listFiles(c *gin.Context) {
 	if len(filters) == 1 {
 		filter = filters[0]
 	}
-	files, err := h.store.ListFiles(c.Request.Context(), c.Param("project_id"), filter, size, (page-1)*size)
+	files, err := h.store.ListFiles(c.Request.Context(), strings.ToLower(c.Param("project_id")), filter, size, (page-1)*size)
 	if err != nil {
 		projectError(c, err)
 		return
@@ -156,7 +156,7 @@ func (h *projectHandler) list(c *gin.Context) {
 }
 
 func (h *projectHandler) get(c *gin.Context) {
-	p, err := h.store.Get(c.Request.Context(), c.Param("project_id"))
+	p, err := h.store.Get(c.Request.Context(), strings.ToLower(c.Param("project_id")))
 	if err != nil {
 		projectError(c, err)
 		return
@@ -191,7 +191,7 @@ func (h *projectHandler) update(c *gin.Context) {
 		failure(c, errInvalidArgument, "at least one valid field is required")
 		return
 	}
-	p, err := h.store.Update(c.Request.Context(), c.Param("project_id"), input.Name, input.Description, time.Now().UTC().UnixMilli())
+	p, err := h.store.Update(c.Request.Context(), strings.ToLower(c.Param("project_id")), input.Name, input.Description, time.Now().UTC().UnixMilli())
 	if err != nil {
 		projectError(c, err)
 		return
@@ -209,7 +209,7 @@ func (h *projectHandler) update(c *gin.Context) {
 }
 
 func (h *projectHandler) delete(c *gin.Context) {
-	deleted, err := h.store.Delete(c.Request.Context(), c.Param("project_id"))
+	deleted, err := h.store.Delete(c.Request.Context(), strings.ToLower(c.Param("project_id")))
 	if err != nil {
 		internalError(c)
 		return
@@ -218,7 +218,7 @@ func (h *projectHandler) delete(c *gin.Context) {
 		failure(c, errNotFound, "project not found")
 		return
 	}
-	if err := h.files.DeleteProject(context.WithoutCancel(c.Request.Context()), c.Param("project_id")); err != nil {
+	if err := h.files.DeleteProject(context.WithoutCancel(c.Request.Context()), strings.ToLower(c.Param("project_id"))); err != nil {
 		_ = c.Error(err)
 		internalError(c)
 		return

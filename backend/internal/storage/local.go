@@ -135,7 +135,7 @@ func validID(value, prefix string) bool {
 }
 
 func (s *Local) versionPath(key VersionKey) (string, error) {
-	if !validID(key.ProjectID, "PRG_") || !validID(key.FileID, "FILE_") || !validID(key.VersionID, "VER_") {
+	if !validID(key.ProjectID, "prg_") || !validID(key.FileID, "file_") || !validID(key.VersionID, "ver_") {
 		return "", ErrInvalidKey
 	}
 	return filepath.Join(s.root, key.ProjectID, key.FileID, key.VersionID), nil
@@ -190,7 +190,7 @@ func (s *Local) DeleteProject(ctx context.Context, projectID string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if !validID(projectID, "PRG_") {
+	if !validID(projectID, "prg_") {
 		return ErrInvalidKey
 	}
 	return os.RemoveAll(filepath.Join(s.root, projectID))
