@@ -1,3 +1,5 @@
 .DS_Store
 backend/data/
 .vscode/
+/build/
+/backend/internal/server/web/dist/

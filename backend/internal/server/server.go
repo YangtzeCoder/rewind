@@ -36,7 +36,7 @@ func Run(listen, dataDir string) error {
 		c.Abort()
 	}))
 	router.HandleMethodNotAllowed = true
-	router.NoRoute(func(c *gin.Context) { failure(c, errNotFound, "not found") })
+	router.NoRoute(frontendFallback)
 	router.NoMethod(func(c *gin.Context) { failure(c, errMethodNotAllowed, "method not allowed") })
 	api := router.Group("/api/v1")
 	projects := database.NewProjectStore(db)
