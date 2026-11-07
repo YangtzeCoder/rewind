@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed web
+//go:embed all:web
 var frontendFiles embed.FS
 
 func frontendFallback(c *gin.Context) {
