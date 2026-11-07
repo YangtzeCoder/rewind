@@ -53,7 +53,7 @@ func backupAuth(tokens *database.TokenStore, authService *auth.Service) gin.Hand
 			c.Next()
 			return
 		}
-		if !strings.HasPrefix(parts[1], "api_") {
+		if !strings.HasPrefix(parts[1], "API_") {
 			failure(c, errUnauthorized, "unauthorized")
 			c.Abort()
 			return

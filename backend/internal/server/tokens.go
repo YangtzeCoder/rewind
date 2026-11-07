@@ -1,9 +1,7 @@
 package server
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"math"
 	"strconv"
@@ -41,17 +39,16 @@ func (h *tokenHandler) create(c *gin.Context) {
 		failure(c, errInvalidArgument, "name is required")
 		return
 	}
-	tokenID, err := id.APIToken()
+	tokenID, err := id.APITokenID()
 	if err != nil {
 		internalError(c)
 		return
 	}
-	var secret [32]byte
-	if _, err := rand.Read(secret[:]); err != nil {
+	credential, err := id.APITokenCredential()
+	if err != nil {
 		internalError(c)
 		return
 	}
-	credential := "api_" + base64.RawURLEncoding.EncodeToString(secret[:])
 	hash := sha256.Sum256([]byte(credential))
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	token := database.APIToken{ID: tokenID, Name: input.Name, CreatedAt: now.UnixMilli()}
