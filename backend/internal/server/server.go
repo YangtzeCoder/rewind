@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Run(listen, dataDir string) error {
+func Run(listen, dataDir string, initialAdminPassword func() (string, error)) error {
 	db, err := database.Open(dataDir)
 	if err != nil {
 		return err
@@ -21,7 +21,7 @@ func Run(listen, dataDir string) error {
 	if err != nil {
 		return err
 	}
-	authService := auth.NewService(database.NewAuthStore(db))
+	authService := auth.NewService(database.NewAuthStore(db), initialAdminPassword)
 	if err := authService.Initialize(context.Background()); err != nil {
 		return err
 	}

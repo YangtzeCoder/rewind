@@ -2,6 +2,21 @@
 
 Rewind 是面向 AI Agent 的自托管文件备份与版本管理服务，帮助用户管理项目文件、保存备份并查看历史版本。
 
+## Docker 部署
+
+从 GitHub Container Registry 拉取镜像并启动服务。首次启动前设置管理员初始密码；镜像默认通过 `--data-dir /data` 将数据保存在 Docker Volume 中。自定义数据目录时，可在镜像名后指定 `serve --data-dir <目录>` 并挂载对应目录。
+
+```bash
+export REWIND_ADMIN_PASSWORD='替换为强密码'
+docker run -d --name rewind \
+  -p 8080:8080 \
+  -v rewind-data:/data \
+  -e REWIND_ADMIN_PASSWORD \
+  ghcr.io/yangtzecoder/rewind:latest
+```
+
+发布版本也可使用对应版本标签，例如 `ghcr.io/yangtzecoder/rewind:v1.2.3`。首次启动后，管理员密码保存在数据目录中，之后更改环境变量不会覆盖已有密码。
+
 ## 安装 Agent Skill
 
 需要 Node.js（`npx skills` 要求 Node.js 22.20 或更新版本）以及运行 Skill 辅助脚本所需的 Python 3。从项目目录执行以下命令，按提示选择需要安装的 Agent：

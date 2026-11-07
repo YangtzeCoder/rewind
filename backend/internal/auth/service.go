@@ -21,9 +21,14 @@ var ErrUnauthorized = errors.New("unauthorized")
 const sessionLifetime = 30 * time.Minute
 const loginPrefix = "login_"
 
-type Service struct{ store *database.AuthStore }
+type Service struct {
+	store                      *database.AuthStore
+	initialAdminPasswordSource func() (string, error)
+}
 
-func NewService(store *database.AuthStore) *Service { return &Service{store: store} }
+func NewService(store *database.AuthStore, initialAdminPasswordSource func() (string, error)) *Service {
+	return &Service{store: store, initialAdminPasswordSource: initialAdminPasswordSource}
+}
 
 func (s *Service) Initialize(ctx context.Context) error {
 	_, _, err := s.store.Admin(ctx)
@@ -33,7 +38,14 @@ func (s *Service) Initialize(ctx context.Context) error {
 	if !errors.Is(err, database.ErrNotFound) {
 		return fmt.Errorf("check administrator: %w", err)
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	initialAdminPassword, err := s.initialAdminPasswordSource()
+	if err != nil {
+		return err
+	}
+	if initialAdminPassword == "" {
+		return errors.New("initial administrator password is required; set REWIND_ADMIN_PASSWORD or REWIND_ADMIN_PASSWORD_FILE")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(initialAdminPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash administrator password: %w", err)
 	}

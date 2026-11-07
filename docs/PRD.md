@@ -157,7 +157,7 @@ File ID 为内部标识，Agent API 使用 `project_id` 和 `key` 定位文件�
 | --- | --- |
 | `rewind serve` | 启动服务 |
 | `--listen` | 监听地址，默认 `0.0.0.0:8080` |
-| `--data-dir` | 数据目录，默认 `/data` |
+| `--data-dir` | 数据目录，默认当前工作目录下的 `data`；Docker 镜像启动时指定为 `/data` |
 | `rewind version` | 查看版本 |
 | `rewind --help` | 查看帮助 |
 
