@@ -26,23 +26,12 @@ async function logout() {
 </script>
 
 <template>
-  <div class="admin-shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">R<span>↶</span></span><span>rewind<span class="brand-dot">.</span></span></div>
-      <div class="nav-label">WORKSPACE</div>
-      <nav aria-label="主导航">
-        <RouterLink class="nav-item" :to="{ name: 'dashboard' }"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-text">概览</span></RouterLink>
-        <RouterLink class="nav-item" :class="{ selected: route.name === 'project' }" :to="{ name: 'projects' }"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-text">项目</span></RouterLink>
-        <RouterLink class="nav-item" :to="{ name: 'tokens' }"><span class="nav-icon" aria-hidden="true">⌘</span><span class="nav-text">API Token</span></RouterLink>
-        <RouterLink class="nav-item" :to="{ name: 'settings' }"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-text">账户设置</span></RouterLink>
-      </nav>
-      <div class="sidebar-bottom"><span class="status-dot"></span><span>自托管空间<small>YOUR PRIVATE WORKSPACE</small></span></div>
-    </aside>
-    <div class="admin-main">
-      <header class="topbar"><div class="breadcrumb"><span>工作空间</span><span class="breadcrumb-divider">/</span><strong>{{ route.meta.title }}</strong></div><div class="account"><span class="avatar">{{ (auth.username || 'A').slice(0, 1).toUpperCase() }}</span><span class="account-name">{{ auth.username || 'admin' }}</span><el-button text :loading="loading" @click="logout">退出登录</el-button></div></header>
-      <div v-if="error" class="logout-error" role="alert">{{ error }}</div>
-      <main class="admin-content"><RouterView /></main>
-      <footer class="admin-footer"><span>© Rewind</span><span>YOUR WORK, PRESERVED.</span></footer>
-    </div>
-  </div>
+  <el-container class="admin-shell">
+    <el-aside class="sidebar"><div class="brand"><span class="brand-mark">R</span><span class="brand-name">rewind<span class="brand-dot">.</span></span></div>
+      <el-menu router :default-active="route.name === 'project' ? '/projects' : route.path" class="navigation" aria-label="主导航"><el-menu-item index="/"><span class="nav-icon">▦</span><span class="nav-text">概览</span></el-menu-item><el-menu-item index="/projects"><span class="nav-icon">▤</span><span class="nav-text">项目</span></el-menu-item><el-menu-item index="/tokens"><span class="nav-icon">⌘</span><span class="nav-text">API Token</span></el-menu-item><el-menu-item index="/settings"><span class="nav-icon">⚙</span><span class="nav-text">账户设置</span></el-menu-item></el-menu>
+    </el-aside>
+    <el-container class="admin-main"><el-header class="topbar"><el-breadcrumb separator="/"><el-breadcrumb-item>工作空间</el-breadcrumb-item><el-breadcrumb-item>{{ route.meta.title }}</el-breadcrumb-item></el-breadcrumb><div class="account"><el-avatar :size="32">{{ (auth.username || 'A').slice(0, 1).toUpperCase() }}</el-avatar><span class="account-name">{{ auth.username || 'admin' }}</span><el-button text :loading="loading" @click="logout">退出登录</el-button></div></el-header>
+      <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" /><el-main class="admin-content"><RouterView /></el-main><el-footer class="admin-footer">© Rewind</el-footer>
+    </el-container>
+  </el-container>
 </template>

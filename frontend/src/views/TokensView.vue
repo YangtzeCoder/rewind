@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import type { ApiToken } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { errorMessage, formatDate } from './helpers'
@@ -23,7 +24,7 @@ async function create() {
   try { const result = await api.createToken(name.value); createdToken.value = result.token; name.value = ''; page.value = 1; await load() } catch (e) { error.value = errorMessage(e) } finally { creating.value = false }
 }
 async function remove(token: ApiToken) {
-  if (!window.confirm(`确定删除 Token“${token.name}”吗？使用它的客户端将立即失去访问权限。`)) return
+  try { await ElMessageBox.confirm(`确定删除 Token“${token.name}”吗？使用它的客户端将立即失去访问权限。`, '删除 Token', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消', closeOnClickModal: false }) } catch { return }
   try { await api.deleteToken(token.id); if (tokens.value.length === 1 && page.value > 1) page.value--; await load() } catch (e) { error.value = errorMessage(e) }
 }
 async function copy() {
@@ -34,13 +35,10 @@ onMounted(load)
 </script>
 <template>
   <section class="dashboard">
-    <div class="page-heading"><div><div class="eyebrow">ACCESS</div><h1>API Token</h1><p>创建供 Agent 使用的访问凭证。</p></div></div>
-    <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-    <div v-if="createdToken" class="token-reveal panel" role="status"><h2>请立即保存 Token</h2><p>完整 Token 仅在创建时显示一次，关闭后无法再次查看。</p><div class="token-value"><code>{{ createdToken }}</code><el-button @click="copy">{{ copied ? '已复制' : '复制' }}</el-button></div><el-button @click="createdToken = ''; copied = false">已保存，关闭</el-button></div>
-    <form class="panel inline-form" @submit.prevent="create"><div><h2>创建 Token</h2><p class="muted">为 Token 起一个便于识别的名称。</p></div><el-input v-model="name" aria-label="Token 名称" placeholder="例如：我的 Agent" /><el-button type="primary" native-type="submit" :loading="creating" :disabled="!name.trim() || !!createdToken">创建</el-button></form>
-    <div class="panel list-panel"><div class="panel-title"><h2>已创建的 Token</h2></div><p v-if="loading" class="empty-text">正在加载…</p><p v-else-if="!tokens.length" class="empty-text">{{ page === 1 ? '还没有 API Token。' : '没有更多 Token。' }}</p>
-      <div v-for="token in tokens" v-else :key="token.id" class="list-row"><div class="row-main"><strong class="item-title">{{ token.name }}</strong><p>{{ token.id }}</p><small>创建于 {{ formatDate(token.created_at) }}</small></div><button class="text-button danger" @click="remove(token)">删除</button></div>
-      <div class="pagination"><el-button :disabled="page === 1 || loading" @click="changePage(-1)">上一页</el-button><span>第 {{ page }} 页</span><el-button :disabled="tokens.length < 20 || loading" @click="changePage(1)">下一页</el-button></div>
-    </div>
+    <div class="page-heading"><div><h1>API Token</h1><p>创建供 Agent 使用的访问凭证。</p></div></div>
+    <el-alert v-if="error" :title="error" type="error" show-icon :closable="false"><el-button link @click="load">重试加载</el-button></el-alert>
+    <el-card v-if="createdToken" class="content-card"><el-alert title="请立即保存 Token" description="完整 Token 仅在创建时显示一次，关闭后无法再次查看。" type="warning" show-icon :closable="false" /><div class="token-value"><code>{{ createdToken }}</code><el-button @click="copy">{{ copied ? '已复制' : '复制' }}</el-button></div><el-button @click="createdToken = ''; copied = false">已保存，关闭</el-button></el-card>
+    <el-card class="content-card"><template #header>创建 Token</template><el-form class="token-form" @submit.prevent="create"><el-form-item label="Token 名称"><el-input v-model="name" aria-label="Token 名称" placeholder="例如：我的 Agent" /></el-form-item><el-button type="primary" native-type="submit" :loading="creating" :disabled="!name.trim() || !!createdToken">创建</el-button></el-form></el-card>
+    <el-card class="content-card"><template #header>已创建的 Token</template><el-table v-loading="loading" :data="tokens"><el-table-column prop="name" label="名称" min-width="150" /><el-table-column prop="id" label="ID" min-width="220" /><el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDate(row.created_at) }}</template></el-table-column><el-table-column label="操作" width="90"><template #default="{ row }"><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column><template #empty><el-empty :description="page === 1 ? '还没有 API Token。' : '没有更多 Token。'" /></template></el-table><div class="pagination"><el-button :disabled="page === 1 || loading" @click="changePage(-1)">上一页</el-button><span>第 {{ page }} 页</span><el-button :disabled="tokens.length < 20 || loading" @click="changePage(1)">下一页</el-button></div></el-card>
   </section>
 </template>

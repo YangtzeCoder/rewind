@@ -37,14 +37,14 @@ async function submit() {
         <div class="eyebrow"><span class="status-dot"></span> REWIND CONSOLE</div>
         <h1>欢迎回来</h1>
         <p class="login-intro">登录管理后台，管理你的备份与版本。</p>
-        <form @submit.prevent="submit">
-          <div v-if="error" class="form-error" role="alert">{{ error }}</div>
-          <label for="username">用户名</label>
+        <el-form label-position="top" @submit.prevent="submit">
+          <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+          <el-form-item label="用户名">
           <el-input id="username" v-model="username" size="large" autocomplete="username" placeholder="请输入用户名" />
-          <label for="password">密码</label>
+          </el-form-item><el-form-item label="密码">
           <el-input id="password" v-model="password" size="large" type="password" show-password autocomplete="current-password" placeholder="请输入密码" />
-          <el-button class="login-button" type="primary" size="large" native-type="submit" :loading="loading" :disabled="!username.trim() || !password">登录 <span aria-hidden="true">→</span></el-button>
-        </form>
+          </el-form-item><el-button class="login-button" type="primary" size="large" native-type="submit" :loading="loading" :disabled="!username.trim() || !password">登录 <span aria-hidden="true">→</span></el-button>
+        </el-form>
       </div>
       <p class="login-footer"><span>为你的工作留一份安心。</span><span>SELF-HOSTED · PRIVATE BY DESIGN</span></p>
     </div>
