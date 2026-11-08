@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
-const username = ref('admin')
+const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref(route.query.expired ? '登录已过期，请重新登录。' : route.query.unavailable ? '无法连接服务，请检查网络后重试。' : '')
