@@ -22,7 +22,7 @@ docker run -d --name rewind \
 需要 Node.js（`npx skills` 要求 Node.js 22.20 或更新版本）以及运行 Skill 辅助脚本所需的 Python 3。从项目目录执行以下命令，按提示选择需要安装的 Agent：
 
 ```bash
-npx skills add https://github.com/YangtzeCoder/rewwind
+npx skills add https://github.com/YangtzeCoder/rewind
 ```
 
 添加 `-g` 可安装到用户级目录。也可以使用已部署 Skill 分发资源的 Rewind 服务地址安装；该地址的 HTTPS 和流量须指向该服务。
