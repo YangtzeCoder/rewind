@@ -1,6 +1,18 @@
 import type {
-  ApiToken, BackupHistoryRequest, BackupVersion, CreatedApiToken, Dashboard, DownloadResult,
-  FileDetail, FileListOptions, LoginResult, Pagination, Project, ProjectFile, ProjectInput, ProjectUpdate,
+  ApiToken,
+  BackupHistoryRequest,
+  BackupVersion,
+  CreatedApiToken,
+  Dashboard,
+  DownloadResult,
+  FileDetail,
+  FileListOptions,
+  LoginResult,
+  Pagination,
+  Project,
+  ProjectFile,
+  ProjectInput,
+  ProjectUpdate,
 } from './types'
 
 export type * from './types'
@@ -41,7 +53,11 @@ function filenameFromDisposition(value: string | null): string | undefined {
   if (!value) return undefined
   const extended = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;]*)/i.exec(value)?.[1]
   if (extended !== undefined) {
-    try { return decodeURIComponent(extended) } catch { /* Try the plain filename. */ }
+    try {
+      return decodeURIComponent(extended)
+    } catch {
+      /* Try the plain filename. */
+    }
   }
   const plain = /(?:^|;)\s*filename\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^;]*))/i.exec(value)
   return plain?.[1]?.replace(/\\(.)/g, '$1') ?? plain?.[2]?.trim()
@@ -50,7 +66,11 @@ function filenameFromDisposition(value: string | null): string | undefined {
 export function createApiClient(options: ApiClientOptions = {}) {
   const base = (options.baseUrl ?? '').replace(/\/+$/, '') + '/api/v1'
 
-  async function send(path: string, init: RequestInit = {}, authenticated = true): Promise<Response> {
+  async function send(
+    path: string,
+    init: RequestInit = {},
+    authenticated = true,
+  ): Promise<Response> {
     const headers = new Headers(init.headers)
     if (authenticated) {
       const token = options.getToken?.()
@@ -62,7 +82,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     } catch (cause) {
       throw new ApiError('network', 'Network request failed', undefined, undefined, { cause })
     }
-    if (!response.ok) throw new ApiError('http', `HTTP ${response.status}`, undefined, response.status)
+    if (!response.ok)
+      throw new ApiError('http', `HTTP ${response.status}`, undefined, response.status)
     return response
   }
 
@@ -77,15 +98,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
       throw new ApiError('response', 'Invalid API response', undefined, response.status)
     }
     if (body.success === false) {
-      if ('error' in body && typeof body.error === 'object' && body.error !== null &&
-          'code' in body.error && typeof body.error.code === 'string' &&
-          'message' in body.error && typeof body.error.message === 'string') {
+      if (
+        'error' in body &&
+        typeof body.error === 'object' &&
+        body.error !== null &&
+        'code' in body.error &&
+        typeof body.error.code === 'string' &&
+        'message' in body.error &&
+        typeof body.error.message === 'string'
+      ) {
         if (body.error.code === 'UNAUTHORIZED') options.onUnauthorized?.()
         throw new ApiError('business', body.error.message, body.error.code, response.status)
       }
       throw new ApiError('response', 'Invalid API error response', undefined, response.status)
     }
-    if (body.success !== true) throw new ApiError('response', 'Invalid API response', undefined, response.status)
+    if (body.success !== true)
+      throw new ApiError('response', 'Invalid API response', undefined, response.status)
     return ('data' in body ? body.data : undefined) as T
   }
 
@@ -110,29 +138,45 @@ export function createApiClient(options: ApiClientOptions = {}) {
     getProject: (id: string) => request<Project>(`/projects/${encodeURIComponent(id)}`),
     updateProject: (id: string, input: ProjectUpdate) =>
       request<Project>(`/projects/${encodeURIComponent(id)}`, json('PATCH', input)),
-    deleteProject: (id: string) => request<void>(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    deleteProject: (id: string) =>
+      request<void>(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     listFiles: (projectId: string, params?: FileListOptions) =>
       request<ProjectFile[]>(`/projects/${encodeURIComponent(projectId)}/files${query(params)}`),
     getFile: (projectId: string, fileId: string) =>
-      request<FileDetail>(`/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}`),
+      request<FileDetail>(
+        `/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}`,
+      ),
     listTokens: (params?: Pagination) => request<ApiToken[]>(`/tokens${query(params)}`),
     createToken: (name: string) => request<CreatedApiToken>('/tokens', json('POST', { name })),
-    deleteToken: (id: string) => request<void>(`/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    deleteToken: (id: string) =>
+      request<void>(`/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     backupHistory: (input: BackupHistoryRequest) =>
       request<BackupVersion[]>('/backups/history', json('POST', input)),
     async downloadBackup(projectId: string, versionId: string): Promise<DownloadResult> {
-      const response = await send(`/backups/download/${encodeURIComponent(projectId)}/${encodeURIComponent(versionId)}`)
+      const response = await send(
+        `/backups/download/${encodeURIComponent(projectId)}/${encodeURIComponent(versionId)}`,
+      )
       const disposition = response.headers.get('Content-Disposition')
       // A downloaded file can itself be JSON; successful downloads have an attachment header.
-      if (!disposition && response.headers.get('Content-Type')?.toLowerCase().includes('application/json')) {
+      if (
+        !disposition &&
+        response.headers.get('Content-Type')?.toLowerCase().includes('application/json')
+      ) {
         await parse<never>(response)
         throw new ApiError('response', 'Expected a file download', undefined, response.status)
       }
-      if (!disposition) throw new ApiError('response', 'Missing download disposition', undefined, response.status)
+      if (!disposition)
+        throw new ApiError('response', 'Missing download disposition', undefined, response.status)
       try {
-        return { blob: await response.blob(), filename: filenameFromDisposition(disposition), contentDisposition: disposition }
+        return {
+          blob: await response.blob(),
+          filename: filenameFromDisposition(disposition),
+          contentDisposition: disposition,
+        }
       } catch (cause) {
-        throw new ApiError('network', 'Failed to read download', undefined, response.status, { cause })
+        throw new ApiError('network', 'Failed to read download', undefined, response.status, {
+          cause,
+        })
       }
     },
   }
