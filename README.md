@@ -30,15 +30,9 @@ npx skills add https://github.com/YangtzeCoder/rewind
 ## 配置和使用
 
 1. 在 Rewind 管理后台创建项目和 API Token，记下项目 ID。Token 明文仅在创建时显示一次，且可访问所有项目的 Agent 接口。
-2. 告诉 Agent 使用 Rewind。首次使用时，Agent 会引导你在自己的终端运行已安装 Skill 中的脚本：
-
-   ```bash
-   python3 <已安装的 Skill 路径>/scripts/rewind.py --project-root <项目根目录> configure --project <项目ID> --url <Rewind服务地址>
-   ```
-
-   服务地址由用户提供，例如自己的 Rewind 部署地址。按提示输入 Token，输入内容不会显示。不要把 Token 粘贴到聊天或放进命令参数。
+2. 告诉 Agent 使用 Rewind。首次使用时，Agent 会询问服务地址和项目 ID，并通过其平台提供的安全密钥输入方式接收 Token，帮你写入配置。不要将 Token 粘贴到普通聊天中。如果 Agent 平台无法安全接收并传递 Token，Agent 会说明限制并停止配置。
 3. 配置保存在该项目根目录的 `.rewind/config.json`，包含 Token；不同项目分别配置。脚本会在 `.rewind/.gitignore` 中添加忽略规则，但这不能取消 Git 对已跟踪文件的跟踪，提交前请确认配置文件不会被提交或分享。
-4. 对 Agent 说“备份 `docs/design.md`”“查看 `docs/design.md` 的备份历史”，或“将它恢复到指定版本”。覆盖本地文件前，Agent 会说明版本和路径并请求确认。
+4. 对 Agent 说“备份 `docs/design.md`”“查看 `docs/design.md` 的备份历史”，或“将它恢复到指定版本”。配置写入本身不能验证服务地址、项目或 Token；实际 API 操作成功后才算验证成功。覆盖本地文件前，Agent 会说明版本和路径并请求确认。
 
 用户可以在所用 Agent 支持的项目指令文件中规定备份时机，例如“修改需求文档前先使用 Rewind 备份”。Skill 本身不设置自动备份规则；Agent 是否自动执行取决于它是否读取并遵循相应指令。默认以项目内相对路径作为文件 key；目录不会自动递归备份。
 

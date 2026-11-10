@@ -11,9 +11,11 @@ description: 根据用户请求或指令，将本地文件备份到 Rewind 服�
 
 确定当前项目根目录，并将其作为工作目录；也可以在子命令前指定 `--project-root ROOT`。每个项目使用各自的 `.rewind/config.json`，不要从用户配置目录或环境变量中读取 Rewind 配置。
 
-如果缺少配置，向用户询问 Rewind 服务地址和项目 ID。引导用户在 Rewind 管理后台创建项目和 API Token。Token 明文仅显示一次，且可访问所有项目。不要要求用户将 Token 粘贴到聊天中，也不要将 Token 放在命令参数中。请用户在自己的终端运行 `python3 <skill-directory>/scripts/rewind.py --project-root ROOT configure --project PROJECT_ID --url URL`。该命令会以隐藏输入的方式提示用户输入 Token，并将其保存到项目配置中。不要读取或输出配置文件的内容。配置文件包含密钥，不要提交、分享或备份。该命令会添加本地 Git 忽略规则，但要提醒用户：忽略规则不会取消 Git 对已跟踪文件的跟踪。
+如果缺少配置或用户需要更换 Token，向用户询问 Rewind 服务地址和项目 ID，并引导用户在 Rewind 管理后台创建项目和 API Token。Token 明文仅显示一次，且可访问所有项目的 Agent 接口。使用当前 Agent 平台提供的安全密钥输入能力，让用户输入 Token；由 Agent 执行 `python3 <skill-directory>/scripts/rewind.py --project-root ROOT configure --project PROJECT_ID --url URL --token-stdin`，通过安全的非交互标准输入流传入 Token。该能力必须确保 Token 不出现在普通聊天、命令参数、终端输出或工具日志中；不要假设普通聊天、工具调用参数或终端输入是安全的。若平台不能同时提供安全输入和安全传输，向用户说明限制并停止配置，不要要求用户运行命令或声称配置成功。
 
-仅完成配置不能验证项目和 Token 是否有效，只有实际 API 操作成功后才能报告验证成功。如果 Token 缺失或无效，引导用户设置或替换，不要暴露其值。
+配置写入成功后继续用户原先请求的操作。不要读取或输出配置文件的内容；配置文件包含密钥，不要提交、分享或备份。脚本会添加本地 Git 忽略规则，但要提醒用户：忽略规则不会取消 Git 对已跟踪文件的跟踪。
+
+仅完成配置不能验证项目和 Token 是否有效，只有实际 API 操作成功后才能报告验证成功。如果 Token 缺失或无效，按上述安全输入流程引导用户设置或替换，不要暴露其值。
 
 ## 操作
 

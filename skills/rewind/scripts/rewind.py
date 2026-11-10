@@ -32,7 +32,7 @@ def load_config(root):
             raise ValueError()
         validate_url(url)
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
-        raise RewindError("Project configuration is missing or invalid; run configure --project PROJECT_ID --url URL in a terminal")
+        raise RewindError("Project configuration is missing or invalid; ask the Agent to configure Rewind")
     return url, project, token
 
 
@@ -166,9 +166,10 @@ def main():
     parser = argparse.ArgumentParser(description="Back up and restore files using Rewind")
     parser.add_argument("--project-root", default=".", help="Project directory containing .rewind/config.json (default: current directory)")
     sub = parser.add_subparsers(dest="command", required=True)
-    setup = sub.add_parser("configure", help="Save project settings and securely prompt for API token")
+    setup = sub.add_parser("configure", help="Save project settings and read the API token securely")
     setup.add_argument("--url", required=True)
     setup.add_argument("--project", required=True)
+    setup.add_argument("--token-stdin", action="store_true", help="Read the API token from standard input instead of an interactive prompt")
     up = sub.add_parser("backup", help="Back up one or more files")
     group = up.add_mutually_exclusive_group()
     group.add_argument("--root", help="Project root, for relative-path keys")
@@ -191,14 +192,22 @@ def main():
         validate_url(args.url)
         if not args.project.strip():
             raise RewindError("Project ID is required")
-        if not sys.stdin.isatty():
-            raise RewindError("Run configure in an interactive terminal to enter the API token privately")
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", getpass.GetPassWarning)
-                token = getpass.getpass("Rewind API token (input hidden): ")
-        except getpass.GetPassWarning:
-            raise RewindError("Cannot hide input; run configure in an interactive terminal")
+        if args.token_stdin:
+            if sys.stdin.isatty():
+                raise RewindError("Standard input must be a secure non-interactive stream with --token-stdin")
+            token = sys.stdin.read(4097)
+            if len(token) > 4096:
+                raise RewindError("API token input is too long")
+            token = token.removesuffix("\n").removesuffix("\r")
+        else:
+            if not sys.stdin.isatty():
+                raise RewindError("An interactive terminal or a secure standard input stream with --token-stdin is required")
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", getpass.GetPassWarning)
+                    token = getpass.getpass("Rewind API token (input hidden): ")
+            except getpass.GetPassWarning:
+                raise RewindError("Cannot hide API token input")
         if not token.strip() or any(c in token for c in "\r\n"):
             raise RewindError("A non-empty API token is required")
         path = config_path(root)
