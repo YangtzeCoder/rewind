@@ -89,6 +89,10 @@ Token 管理接口只接受登录 Token。`POST /api/v1/tokens` 接收非空 `na
 
 每条记录包含 `id`（文件 ID）、`key`、`created_at`、`updated_at`、`version_count` 和 `latest_version`。最新版本按版本创建顺序确定，包含 `version_id`、`size`（字节）和 `created_at`；文件没有版本时 `latest_version` 为 `null`。时间采用 UTC RFC 3339 格式。项目不存在返回 `NOT_FOUND`；分页参数无效或重复的 `key` 返回 `INVALID_ARGUMENT`；没有结果时返回空数组。
 
+### 项目文件详情
+
+`GET /api/v1/projects/{project_id}/files/{file_id}` 只接受登录 Token，返回文件的 `id` 和原始 `key`。项目或文件不存在、文件不属于该项目时返回 `NOT_FOUND`。项目 ID 和文件 ID 均忽略大小写。
+
 ## 备份上传
 
 `POST /api/v1/backups` 仅接受 API Token，通过 `Authorization: Bearer <api_token>` 传递；缺少、无效、已删除的 API Token 或使用登录 Token 时返回 `UNAUTHORIZED`。

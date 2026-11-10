@@ -42,6 +42,8 @@ export interface ProjectFile {
   latest_version: { version_id: string; size: number; created_at: string } | null
 }
 
+export type FileDetail = Pick<ProjectFile, 'id' | 'key'>
+
 export interface FileListOptions extends Pagination {
   key?: string
 }

@@ -1,6 +1,6 @@
 import type {
   ApiToken, BackupHistoryRequest, BackupVersion, CreatedApiToken, Dashboard, DownloadResult,
-  FileListOptions, LoginResult, Pagination, Project, ProjectFile, ProjectInput, ProjectUpdate,
+  FileDetail, FileListOptions, LoginResult, Pagination, Project, ProjectFile, ProjectInput, ProjectUpdate,
 } from './types'
 
 export type * from './types'
@@ -113,6 +113,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     deleteProject: (id: string) => request<void>(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     listFiles: (projectId: string, params?: FileListOptions) =>
       request<ProjectFile[]>(`/projects/${encodeURIComponent(projectId)}/files${query(params)}`),
+    getFile: (projectId: string, fileId: string) =>
+      request<FileDetail>(`/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}`),
     listTokens: (params?: Pagination) => request<ApiToken[]>(`/tokens${query(params)}`),
     createToken: (name: string) => request<CreatedApiToken>('/tokens', json('POST', { name })),
     deleteToken: (id: string) => request<void>(`/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),

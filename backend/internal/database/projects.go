@@ -39,6 +39,16 @@ type ProjectFile struct {
 	LatestSize, LatestTime sql.NullInt64
 }
 
+// GetFile resolves a file only within its owning project.
+func (s *ProjectStore) GetFile(ctx context.Context, projectID, fileID string) (ProjectFile, error) {
+	var f ProjectFile
+	err := s.db.QueryRowContext(ctx, `SELECT id, key FROM files WHERE project_id = ? AND id = ?`, projectID, fileID).Scan(&f.ID, &f.Key)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ProjectFile{}, ErrNotFound
+	}
+	return f, err
+}
+
 // ListFiles verifies the project and reads the page in the same snapshot.
 func (s *ProjectStore) ListFiles(ctx context.Context, projectID, keyFilter string, limit, offset int64) ([]ProjectFile, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})

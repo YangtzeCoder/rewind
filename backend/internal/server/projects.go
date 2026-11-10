@@ -28,8 +28,22 @@ func registerProjectRoutes(router *gin.RouterGroup, authService *auth.Service, s
 	group.GET("", h.list)
 	group.GET("/:project_id", h.get)
 	group.GET("/:project_id/files", h.listFiles)
+	group.GET("/:project_id/files/:file_id", h.getFile)
 	group.PATCH("/:project_id", h.update)
 	group.DELETE("/:project_id", h.delete)
+}
+
+func (h *projectHandler) getFile(c *gin.Context) {
+	f, err := h.store.GetFile(c.Request.Context(), strings.ToLower(c.Param("project_id")), strings.ToLower(c.Param("file_id")))
+	if errors.Is(err, database.ErrNotFound) {
+		failure(c, errNotFound, "file not found")
+		return
+	}
+	if err != nil {
+		internalError(c)
+		return
+	}
+	success(c, gin.H{"id": f.ID, "key": f.Key})
 }
 
 func (h *projectHandler) listFiles(c *gin.Context) {

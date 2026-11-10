@@ -6,6 +6,7 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProjectsView from '@/views/ProjectsView.vue'
 import ProjectView from '@/views/ProjectView.vue'
+import FileDetailView from '@/views/FileDetailView.vue'
 import TokensView from '@/views/TokensView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 
@@ -20,6 +21,7 @@ const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: '概览' } },
         { path: 'projects', name: 'projects', component: ProjectsView, meta: { title: '项目' } },
         { path: 'projects/:id', name: 'project', component: ProjectView, meta: { title: '项目详情' } },
+        { path: 'projects/:id/files/:fileId', name: 'file-detail', component: FileDetailView, meta: { title: '文件详情' } },
         { path: 'tokens', name: 'tokens', component: TokensView, meta: { title: 'API Token' } },
         { path: 'settings', name: 'settings', component: SettingsView, meta: { title: '账户设置' } },
       ],
