@@ -2,6 +2,41 @@
 
 Rewind 是面向 AI Agent 的自托管文件备份与版本管理服务，帮助用户管理项目文件、保存备份并查看历史版本。
 
+## 本地开发
+
+前端和后端分别启动。在第一个终端启动后端（在仓库根目录执行）：
+
+```bash
+cd backend
+REWIND_ADMIN_PASSWORD=123456 go run ./cmd/rewind serve \
+  --listen 127.0.0.1:8080 \
+  --data-dir ./data
+```
+
+`123456` 仅用于本地测试环境，**不要在生产环境使用**。`backend/data` 保存 SQLite 数据库和备份文件，并已加入 Git 忽略规则。该密码只在这个数据目录首次初始化管理员账户时使用；以后再次启动不会重置已有密码。
+
+在第二个终端启动 Vite 前端：
+
+```bash
+cd frontend
+npm run dev -- --host 127.0.0.1
+```
+
+打开 Vite 输出的本地地址（默认 `http://localhost:5173`），使用用户名 `admin` 和上述密码登录。开发服务器会将 `/api` 请求代理到 `http://localhost:8080`。
+
+可选：向当前运行的本地服务导入演示项目、文件及版本。在仓库根目录另开一个终端：
+
+```bash
+export REWIND_ADMIN_PASSWORD=123456
+python3 scripts/seed-demo.py
+```
+
+脚本创建两个演示项目，每个项目有 4 个文件、每个文件有 4 个随机内容版本。若发现同名演示项目，脚本会停止且不修改或删除已有数据。若导入过程失败且已创建了部分演示项目，先在后台删除这些演示项目，再重新运行脚本。
+
+## 构建
+
+本地开发时前后端分开运行。发布构建可在仓库根目录执行 `./scripts/build.sh`：脚本构建前端、将前端资源临时嵌入后端，并生成多个平台的后端可执行文件到 `build/`。Docker 发布镜像也使用嵌入式前端；运行方式见下文。
+
 ## Docker 部署
 
 从 GitHub Container Registry 拉取镜像并启动服务。首次启动前设置管理员初始密码；镜像默认通过 `--data-dir /data` 将数据保存在 Docker Volume 中。自定义数据目录时，可在镜像名后指定 `serve --data-dir <目录>` 并挂载对应目录。
