@@ -16,7 +16,12 @@ export interface Project {
   updated_at: string
 }
 
-export interface ProjectListItem extends Project {
+export interface ProjectListItem {
+  id: string
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
   total_size: number
 }
 
@@ -47,7 +52,10 @@ export interface ProjectFile {
   latest_version: { version_id: string; size: number; created_at: string } | null
 }
 
-export type FileDetail = Pick<ProjectFile, 'id' | 'key'>
+export interface FileDetail {
+  id: string
+  key: string
+}
 
 export interface FileListOptions extends Pagination {
   key?: string
@@ -59,7 +67,10 @@ export interface ApiToken {
   created_at: string
 }
 
-export interface CreatedApiToken extends ApiToken {
+export interface CreatedApiToken {
+  id: string
+  name: string
+  created_at: string
   token: string
 }
 

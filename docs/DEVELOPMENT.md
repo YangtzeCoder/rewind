@@ -123,6 +123,7 @@ cd frontend && npm run build
 ### 前端
 
 - API 调用集中放在 `frontend/src/api/`，共享响应类型放在 `frontend/src/api/types.ts`。
+- 语义或接口契约不同的 API 类型即使字段相同，也应独立声明；不要通过 `extends`、`Pick` 或 `Omit` 从另一 API 类型派生。真正通用的结构（如分页参数）可组合复用。
 - 页面和路由状态遵循现有 Pinia store、Vue Router 和 Element Plus 用法。
 - 管理页面受路由认证守卫保护；登录和过期状态由 `stores/auth.ts` 管理。
 
