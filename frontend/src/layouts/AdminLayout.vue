@@ -30,13 +30,19 @@ async function logout() {
 <template>
   <el-container class="admin-shell">
     <el-aside class="sidebar">
-      <div class="brand">
+      <a
+        class="brand"
+        :href="router.resolve({ name: 'home' }).href"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Rewind 首页（在新窗口打开）"
+      >
         <span class="brand-mark">R</span>
         <span class="brand-name">
           rewind
           <span class="brand-dot">.</span>
         </span>
-      </div>
+      </a>
       <el-menu
         router
         :default-active="
