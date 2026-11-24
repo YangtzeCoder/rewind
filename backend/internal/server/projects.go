@@ -82,12 +82,14 @@ func (h *projectHandler) listFiles(c *gin.Context) {
 		CreatedAt     string                 `json:"created_at"`
 		UpdatedAt     string                 `json:"updated_at"`
 		VersionCount  int64                  `json:"version_count"`
+		TotalSize     int64                  `json:"total_size"`
 		LatestVersion *latestVersionResponse `json:"latest_version"`
 	}
 	result := make([]fileResponse, 0, len(files))
 	for _, f := range files {
 		item := fileResponse{ID: f.ID, Key: f.Key, CreatedAt: time.UnixMilli(f.CreatedAt).UTC().Format(time.RFC3339Nano),
-			UpdatedAt: time.UnixMilli(f.UpdatedAt).UTC().Format(time.RFC3339Nano), VersionCount: f.VersionCount}
+			UpdatedAt: time.UnixMilli(f.UpdatedAt).UTC().Format(time.RFC3339Nano), VersionCount: f.VersionCount,
+			TotalSize: f.TotalSize}
 		if f.LatestVersionID.Valid {
 			item.LatestVersion = &latestVersionResponse{VersionID: f.LatestVersionID.String, Size: f.LatestSize.Int64,
 				CreatedAt: time.UnixMilli(f.LatestTime.Int64).UTC().Format(time.RFC3339Nano)}
@@ -159,12 +161,13 @@ func (h *projectHandler) list(c *gin.Context) {
 		Description string `json:"description"`
 		CreatedAt   string `json:"created_at"`
 		UpdatedAt   string `json:"updated_at"`
+		TotalSize   int64  `json:"total_size"`
 	}
 	result := make([]listProjectResponse, 0, len(projects))
 	for _, p := range projects {
 		result = append(result, listProjectResponse{ID: p.ID, Name: p.Name, Description: p.Description,
 			CreatedAt: time.UnixMilli(p.CreatedAt).UTC().Format(time.RFC3339Nano),
-			UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano)})
+			UpdatedAt: time.UnixMilli(p.UpdatedAt).UTC().Format(time.RFC3339Nano), TotalSize: p.TotalSize})
 	}
 	success(c, result)
 }

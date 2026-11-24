@@ -9,6 +9,7 @@ import (
 type Project struct {
 	ID, Name, Description string
 	CreatedAt, UpdatedAt  int64
+	TotalSize             int64
 }
 
 type ProjectStore struct{ db *sql.DB }
@@ -32,11 +33,11 @@ func (s *ProjectStore) Dashboard(ctx context.Context) (Dashboard, error) {
 }
 
 type ProjectFile struct {
-	ID, Key                string
-	CreatedAt, UpdatedAt   int64
-	VersionCount           int64
-	LatestVersionID        sql.NullString
-	LatestSize, LatestTime sql.NullInt64
+	ID, Key                 string
+	CreatedAt, UpdatedAt    int64
+	VersionCount, TotalSize int64
+	LatestVersionID         sql.NullString
+	LatestSize, LatestTime  sql.NullInt64
 }
 
 // GetFile resolves a file only within its owning project.
@@ -64,7 +65,8 @@ func (s *ProjectStore) ListFiles(ctx context.Context, projectID, keyFilter strin
 		return nil, ErrNotFound
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT f.id, f.key, f.created_at, f.updated_at,
-(SELECT COUNT(*) FROM versions WHERE file_id = f.id), v.id, v.size, v.created_at
+(SELECT COUNT(*) FROM versions WHERE file_id = f.id),
+(SELECT COALESCE(SUM(size), 0) FROM versions WHERE file_id = f.id), v.id, v.size, v.created_at
 FROM files f LEFT JOIN versions v ON v.sequence =
  (SELECT sequence FROM versions WHERE file_id = f.id ORDER BY sequence DESC LIMIT 1)
 WHERE f.project_id = ? AND (? = '' OR instr(f.key, ?) > 0)
@@ -75,7 +77,7 @@ ORDER BY f.updated_at DESC, f.id DESC LIMIT ? OFFSET ?`, projectID, keyFilter, k
 	files := make([]ProjectFile, 0)
 	for rows.Next() {
 		var f ProjectFile
-		if err := rows.Scan(&f.ID, &f.Key, &f.CreatedAt, &f.UpdatedAt, &f.VersionCount, &f.LatestVersionID, &f.LatestSize, &f.LatestTime); err != nil {
+		if err := rows.Scan(&f.ID, &f.Key, &f.CreatedAt, &f.UpdatedAt, &f.VersionCount, &f.TotalSize, &f.LatestVersionID, &f.LatestSize, &f.LatestTime); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -100,7 +102,9 @@ func (s *ProjectStore) Create(ctx context.Context, p Project) error {
 }
 
 func (s *ProjectStore) List(ctx context.Context, limit, offset int64) ([]Project, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, name, description, created_at, updated_at FROM projects ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`, limit, offset)
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
+(SELECT COALESCE(SUM(v.size), 0) FROM files f JOIN versions v ON v.file_id = f.id WHERE f.project_id = p.id)
+FROM projects p ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +112,7 @@ func (s *ProjectStore) List(ctx context.Context, limit, offset int64) ([]Project
 	projects := make([]Project, 0)
 	for rows.Next() {
 		var p Project
-		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt, &p.TotalSize); err != nil {
 			return nil, err
 		}
 		projects = append(projects, p)

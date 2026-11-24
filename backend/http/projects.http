@@ -23,7 +23,7 @@ Content-Type: application/json
   "description": "项目管理接口测试"
 }
 
-### 项目列表
+### 项目列表（每项包含所有历史版本累计的 total_size）
 GET {{baseUrl}}/projects?page=1&page_size=20
 Authorization: Bearer {{login.response.body.$.data.token}}
 
@@ -35,7 +35,7 @@ Authorization: Bearer {{login.response.body.$.data.token}}
 GET {{baseUrl}}/dashboard
 Authorization: Bearer {{login.response.body.$.data.token}}
 
-### 项目文件列表（可选 key 字面子串筛选）
+### 项目文件列表（可选 key 字面子串筛选；每项包含所有历史版本累计的 total_size）
 GET {{baseUrl}}/projects/{{createProject.response.body.$.data.id}}/files?page=1&page_size=20&key=docs
 Authorization: Bearer {{login.response.body.$.data.token}}
 

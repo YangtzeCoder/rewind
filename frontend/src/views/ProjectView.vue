@@ -150,10 +150,8 @@ watch(
         <el-table-column label="版本" min-width="120">
           <template #default="{ row }">{{ row.version_count }} 个版本</template>
         </el-table-column>
-        <el-table-column label="最新大小" min-width="110">
-          <template #default="{ row }">
-            {{ row.latest_version ? formatSize(row.latest_version.size) : '—' }}
-          </template>
+        <el-table-column label="累计存储量" min-width="110">
+          <template #default="{ row }">{{ formatSize(row.total_size) }}</template>
         </el-table-column>
         <el-table-column label="更新时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.updated_at) }}</template>

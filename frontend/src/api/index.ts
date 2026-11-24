@@ -10,6 +10,7 @@ import type {
   LoginResult,
   Pagination,
   Project,
+  ProjectListItem,
   ProjectFile,
   ProjectInput,
   ProjectUpdate,
@@ -133,7 +134,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<void>('/auth/password', json('POST', { current_password, new_password })),
     me: () => request<{ username: string }>('/auth/me'),
     dashboard: () => request<Dashboard>('/dashboard'),
-    listProjects: (params?: Pagination) => request<Project[]>(`/projects${query(params)}`),
+    listProjects: (params?: Pagination) => request<ProjectListItem[]>(`/projects${query(params)}`),
     createProject: (input: ProjectInput) => request<Project>('/projects', json('POST', input)),
     getProject: (id: string) => request<Project>(`/projects/${encodeURIComponent(id)}`),
     updateProject: (id: string, input: ProjectUpdate) =>

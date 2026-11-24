@@ -16,6 +16,10 @@ export interface Project {
   updated_at: string
 }
 
+export interface ProjectListItem extends Project {
+  total_size: number
+}
+
 export interface ProjectInput {
   name: string
   description?: string | null
@@ -39,6 +43,7 @@ export interface ProjectFile {
   created_at: string
   updated_at: string
   version_count: number
+  total_size: number
   latest_version: { version_id: string; size: number; created_at: string } | null
 }
 

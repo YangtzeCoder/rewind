@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import type { Project } from '@/api'
+import type { Project, ProjectListItem } from '@/api'
 import { useAuthStore } from '@/stores/auth'
-import { errorMessage, formatDate } from './helpers'
+import { errorMessage, formatDate, formatSize } from './helpers'
 
 const api = useAuthStore().api
-const projects = ref<Project[]>([])
+const projects = ref<ProjectListItem[]>([])
 const page = ref(1)
 const loading = ref(false)
 const saving = ref(false)
@@ -153,6 +153,9 @@ onMounted(load)
         </el-table-column>
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="累计存储量" min-width="110">
+          <template #default="{ row }">{{ formatSize(row.total_size) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="140">
           <template #default="{ row }">
