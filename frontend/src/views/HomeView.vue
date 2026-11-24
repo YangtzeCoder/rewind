@@ -3,15 +3,16 @@ import { ref } from 'vue'
 
 const githubCommand = 'npx skills add https://github.com/YangtzeCoder/rewind'
 const serviceCommand = `npx skills add ${window.location.origin}`
+const agentPrompt = `请根据 ${window.location.origin}/.well-known/skills/index.json 中的说明，获取并安装 Rewind Skill`
 const isHttp = window.location.protocol === 'http:'
 const copyStatus = ref('')
 
-async function copyCommand(command: string, source: string) {
+async function copyText(text: string, source: string) {
   try {
-    await navigator.clipboard.writeText(command)
-    copyStatus.value = `${source}命令已复制。`
+    await navigator.clipboard.writeText(text)
+    copyStatus.value = `${source}已复制。`
   } catch {
-    copyStatus.value = '复制失败，请手动选择并复制命令。'
+    copyStatus.value = '复制失败，请手动选择并复制内容。'
   }
 }
 </script>
@@ -154,9 +155,9 @@ async function copyCommand(command: string, source: string) {
             <br />
             <span>也会使用 Rewind。</span>
           </h2>
-          <p>在项目目录中运行下面任意一条命令，按提示选择需要安装的 Agent。</p>
+          <p>选择下面的命令安装，或复制提示词交给 Agent。</p>
           <div class="requirements">
-            <span>安装前准备</span>
+            <span>使用 npx 安装前准备</span>
             <p>Node.js 22.20 或更新版本，以及 Python 3。</p>
           </div>
         </div>
@@ -174,7 +175,7 @@ async function copyCommand(command: string, source: string) {
               <button
                 type="button"
                 aria-label="复制 GitHub 安装命令"
-                @click="copyCommand(githubCommand, 'GitHub 安装')"
+                @click="copyText(githubCommand, 'GitHub 安装命令')"
               >
                 复制
               </button>
@@ -193,7 +194,7 @@ async function copyCommand(command: string, source: string) {
               <button
                 type="button"
                 aria-label="复制当前服务安装命令"
-                @click="copyCommand(serviceCommand, '当前服务安装')"
+                @click="copyText(serviceCommand, '当前服务安装命令')"
               >
                 复制
               </button>
@@ -204,6 +205,25 @@ async function copyCommand(command: string, source: string) {
                 当前页面使用 HTTP，请通过该服务的 HTTPS 地址访问后安装。
               </template>
             </p>
+          </article>
+          <article class="command-card">
+            <div class="command-heading">
+              <div>
+                <span>03 / AGENT PROMPT</span>
+                <h3>不支持 npx skills？</h3>
+              </div>
+              <span aria-hidden="true">↗</span>
+            </div>
+            <div class="command-box">
+              <code>{{ agentPrompt }}</code>
+              <button
+                type="button"
+                aria-label="复制 Agent 安装提示词"
+                @click="copyText(agentPrompt, 'Agent 安装提示词')"
+              >
+                复制
+              </button>
+            </div>
           </article>
           <p class="copy-status" role="status" aria-live="polite">{{ copyStatus }}</p>
           <p class="install-note">
