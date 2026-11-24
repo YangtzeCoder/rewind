@@ -139,6 +139,9 @@ body {
   gap: 16px;
   min-height: 80px;
 }
+.clickable-stat-card {
+  cursor: pointer;
+}
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

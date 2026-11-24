@@ -33,7 +33,9 @@ onMounted(load)
     </el-alert>
     <div v-loading="loading" class="stats-grid">
       <template v-if="data">
-        <el-card><el-statistic title="项目" :value="data.project_count" /></el-card>
+        <el-card class="clickable-stat-card" @click="$router.push({ name: 'projects' })">
+          <el-statistic title="项目" :value="data.project_count" />
+        </el-card>
         <el-card><el-statistic title="文件" :value="data.file_count" /></el-card>
         <el-card><el-statistic title="备份版本" :value="data.version_count" /></el-card>
         <el-card><el-statistic title="存储用量" :value="formatSize(data.total_size)" /></el-card>
