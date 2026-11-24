@@ -66,7 +66,7 @@ async function logout() {
     <el-container class="admin-main">
       <el-header class="topbar">
         <el-breadcrumb separator="/">
-          <el-breadcrumb-item>工作空间</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ name: 'dashboard' }">工作空间</el-breadcrumb-item>
           <el-breadcrumb-item>{{ route.meta.title }}</el-breadcrumb-item>
         </el-breadcrumb>
         <div class="account">
