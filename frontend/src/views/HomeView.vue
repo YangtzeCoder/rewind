@@ -42,6 +42,7 @@ async function copyText(text: string, source: string) {
             GitHub
             <span aria-hidden="true">↗</span>
           </a>
+          <RouterLink class="header-link" to="/login">登录</RouterLink>
         </nav>
       </header>
 
