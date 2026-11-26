@@ -3,7 +3,6 @@ import { ref } from 'vue'
 
 const brandMark = '/brand-mark.svg'
 const origin = window.location.origin
-const isHttp = window.location.protocol === 'http:'
 const installMethods = [
   {
     id: 'github',
@@ -81,12 +80,6 @@ async function copyMethod(method: (typeof installMethods)[number]) {
                 {{ copyStatus?.id === method.id && copyStatus.succeeded ? '已复制' : '复制' }}
               </button>
             </div>
-            <p v-if="method.id === 'service'" class="method-note">
-              <template v-if="isHttp">
-                当前页面使用 HTTP。请访问指向此 Rewind 服务的 HTTPS 地址后安装。
-              </template>
-              <template v-else>安装地址须使用 HTTPS，并指向此 Rewind 服务。</template>
-            </p>
             <p v-if="copyStatus?.id === method.id && !copyStatus.succeeded" class="copy-error">
               {{ copyStatus.message }}
             </p>
