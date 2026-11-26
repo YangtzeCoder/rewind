@@ -9,6 +9,7 @@ type APIToken struct {
 	ID        string
 	Name      string
 	CreatedAt int64
+	Viewable  bool
 }
 
 type TokenStore struct{ db *sql.DB }
@@ -21,13 +22,13 @@ func (s *TokenStore) ExistsHash(ctx context.Context, hash string) (bool, error) 
 	return exists, err
 }
 
-func (s *TokenStore) Create(ctx context.Context, token APIToken, hash string) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO api_tokens (id, name, token_hash, created_at) VALUES (?, ?, ?, ?)`, token.ID, token.Name, hash, token.CreatedAt)
+func (s *TokenStore) Create(ctx context.Context, token APIToken, hash, value string) error {
+	_, err := s.db.ExecContext(ctx, `INSERT INTO api_tokens (id, name, token_hash, token_value, created_at) VALUES (?, ?, ?, ?, ?)`, token.ID, token.Name, hash, value, token.CreatedAt)
 	return err
 }
 
 func (s *TokenStore) List(ctx context.Context, limit, offset int64) ([]APIToken, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, name, created_at FROM api_tokens ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`, limit, offset)
+	rows, err := s.db.QueryContext(ctx, `SELECT id, name, created_at, token_value IS NOT NULL FROM api_tokens ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -35,12 +36,24 @@ func (s *TokenStore) List(ctx context.Context, limit, offset int64) ([]APIToken,
 	tokens := make([]APIToken, 0)
 	for rows.Next() {
 		var token APIToken
-		if err := rows.Scan(&token.ID, &token.Name, &token.CreatedAt); err != nil {
+		if err := rows.Scan(&token.ID, &token.Name, &token.CreatedAt, &token.Viewable); err != nil {
 			return nil, err
 		}
 		tokens = append(tokens, token)
 	}
 	return tokens, rows.Err()
+}
+
+func (s *TokenStore) Secret(ctx context.Context, id string) (string, bool, error) {
+	var value sql.NullString
+	err := s.db.QueryRowContext(ctx, `SELECT token_value FROM api_tokens WHERE id = ?`, id).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	return value.String, value.Valid, nil
 }
 
 func (s *TokenStore) Delete(ctx context.Context, id string) (bool, error) {

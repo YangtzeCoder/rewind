@@ -65,6 +65,7 @@ export interface ApiToken {
   id: string
   name: string
   created_at: string
+  viewable: boolean
 }
 
 export interface CreatedApiToken {

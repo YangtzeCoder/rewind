@@ -54,10 +54,17 @@ func initializeSchema(db *sql.DB) error {
 		if _, err := tx.Exec(schema); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("PRAGMA user_version = 1"); err != nil {
+		if _, err := tx.Exec("PRAGMA user_version = 2"); err != nil {
 			return err
 		}
 	case 1:
+		if _, err := tx.Exec("ALTER TABLE api_tokens ADD COLUMN token_value TEXT"); err != nil {
+			return err
+		}
+		if _, err := tx.Exec("PRAGMA user_version = 2"); err != nil {
+			return err
+		}
+	case 2:
 		// The schema is already initialized.
 	default:
 		return fmt.Errorf("unsupported database schema version %d", version)
@@ -81,6 +88,7 @@ CREATE TABLE login_tokens (
 );
 CREATE TABLE api_tokens (
  id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE,
+ token_value TEXT,
  created_at INTEGER NOT NULL
 );
 CREATE TABLE projects (

@@ -14,6 +14,10 @@ const creating = ref(false)
 const loading = ref(false)
 const error = ref('')
 const copied = ref(false)
+const viewedToken = ref<{ name: string; token: string } | null>(null)
+const viewedCopied = ref(false)
+const secretDialogVisible = ref(false)
+const viewingId = ref('')
 async function load() {
   loading.value = true
   error.value = ''
@@ -65,17 +69,41 @@ async function remove(token: ApiToken) {
     error.value = errorMessage(e)
   }
 }
-async function copy() {
+async function view(token: ApiToken) {
+  viewingId.value = token.id
+  error.value = ''
   try {
-    await navigator.clipboard.writeText(createdToken.value)
-    copied.value = true
+    const result = await api.getTokenSecret(token.id)
+    viewedToken.value = { name: token.name, token: result.token }
+    viewedCopied.value = false
+    secretDialogVisible.value = true
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    viewingId.value = ''
+  }
+}
+async function copyToken(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value)
+    return true
   } catch {
     error.value = '复制失败，请手动选择并复制 Token。'
+    return false
   }
+}
+async function copyCreatedToken() {
+  if (await copyToken(createdToken.value)) copied.value = true
+}
+async function copyViewedToken() {
+  if (viewedToken.value && (await copyToken(viewedToken.value.token))) viewedCopied.value = true
 }
 function dismissCreatedToken() {
   createdToken.value = ''
   copied.value = false
+}
+function clearViewedToken() {
+  viewedToken.value = null
 }
 function changePage(delta: number) {
   page.value += delta
@@ -96,15 +124,15 @@ onMounted(load)
     </el-alert>
     <el-card v-if="createdToken" class="content-card">
       <el-alert
-        title="请立即保存 Token"
-        description="完整 Token 仅在创建时显示一次，关闭后无法再次查看。"
+        title="Token 已创建"
+        description="之后可在下方列表中再次查看。Token 明文保存在数据库中，请保护好数据目录和备份。"
         type="warning"
         show-icon
         :closable="false"
       />
       <div class="token-value">
         <code>{{ createdToken }}</code>
-        <el-button @click="copy">{{ copied ? '已复制' : '复制' }}</el-button>
+        <el-button @click="copyCreatedToken">{{ copied ? '已复制' : '复制' }}</el-button>
       </div>
       <el-button @click="dismissCreatedToken">已保存，关闭</el-button>
     </el-card>
@@ -132,8 +160,19 @@ onMounted(load)
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="90">
+        <el-table-column label="操作" width="190">
           <template #default="{ row }">
+            <el-button
+              v-if="row.viewable"
+              link
+              :loading="viewingId === row.id"
+              @click="view(row)"
+            >
+              查看
+            </el-button>
+            <el-tooltip v-else content="旧 Token 仅保存了不可逆哈希，无法查看">
+              <el-text type="info" size="small">不可查看</el-text>
+            </el-tooltip>
             <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -149,5 +188,18 @@ onMounted(load)
         </el-button>
       </div>
     </el-card>
+    <el-dialog
+      v-model="secretDialogVisible"
+      :title="`API Token：${viewedToken?.name ?? ''}`"
+      width="min(640px, 90vw)"
+      @closed="clearViewedToken"
+    >
+      <div v-if="viewedToken" class="token-value">
+        <code>{{ viewedToken.token }}</code>
+        <el-button @click="copyViewedToken">
+          {{ viewedCopied ? '已复制' : '复制' }}
+        </el-button>
+      </div>
+    </el-dialog>
   </section>
 </template>

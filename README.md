@@ -39,7 +39,7 @@ npx skills add https://github.com/YangtzeCoder/rewind
 
 ## 配置和使用
 
-1. 在 Rewind 管理后台创建项目和 API Token，记下项目 ID。Token 明文仅在创建时显示一次，且可访问所有项目的 Agent 接口。
+1. 在 Rewind 管理后台创建项目和 API Token，记下项目 ID。新创建的 Token 可在管理后台再次查看，且可访问所有项目的 Agent 接口。升级前创建的 Token 因只保存了不可逆哈希而无法查看；如需重新获取明文，请新建 Token。
 2. 告诉 Agent 使用 Rewind。首次使用时，Agent 会询问服务地址和项目 ID，并通过其平台提供的安全密钥输入方式接收 Token，帮你写入配置。不要将 Token 粘贴到普通聊天中。如果 Agent 平台无法安全接收并传递 Token，Agent 会说明限制并停止配置。
 3. 配置保存在该项目根目录的 `.rewind/config.json`，包含 Token；不同项目分别配置。脚本会在 `.rewind/.gitignore` 中添加忽略规则，但这不能取消 Git 对已跟踪文件的跟踪，提交前请确认配置文件不会被提交或分享。
 4. 对 Agent 说“备份 `docs/design.md`”“查看 `docs/design.md` 的备份历史”，或“将它恢复到指定版本”。配置写入本身不能验证服务地址、项目或 Token；实际 API 操作成功后才算验证成功。覆盖本地文件前，Agent 会说明版本和路径并请求确认。

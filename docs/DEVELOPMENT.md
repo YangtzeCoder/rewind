@@ -132,7 +132,7 @@ cd frontend && npm run build
 - 首次初始化管理员密码只能由 `REWIND_ADMIN_PASSWORD` 或 `REWIND_ADMIN_PASSWORD_FILE` 提供，不能在命令行参数中传递。
 - 数据目录默认是当前工作目录下的 `data`；Docker 使用 `/data`。
 - Docker 镜像以非 root 用户运行。
-- 登录密码只保存安全哈希；登录 Token 和 API Token 只保存哈希。
+- 登录密码只保存安全哈希；登录 Token 只保存哈希。API Token 保存校验哈希及用于管理后台再次查看的明文。
 - 日志不得记录密码、完整登录 Token 或完整 API Token。
-- API Token 明文只在创建时展示一次。
+- API Token 明文存储在 SQLite 中，数据库文件及其备份都应按凭证妥善保护。已有数据库升级后，历史 Token 仍可使用，但因只存有哈希而无法查看。
 - 不要提交真实密码、Token、`backend/data/` 数据库或用户备份文件。

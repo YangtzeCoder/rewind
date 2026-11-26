@@ -12,7 +12,7 @@ Content-Type: application/json
   "password": "{{password}}"
 }
 
-### 创建 API Token：token 明文仅在此响应中返回一次，请妥善保存
+### 创建 API Token：token 明文在此响应中返回，也可稍后通过管理接口再次读取
 # @name createToken
 POST {{baseUrl}}/tokens
 Authorization: Bearer {{login.response.body.$.data.token}}
@@ -22,8 +22,12 @@ Content-Type: application/json
   "name": "my agent"
 }
 
-### 查询列表（不包含 token 明文）
+### 查询列表（不直接包含 token 明文；viewable 表示是否可再次读取）
 GET {{baseUrl}}/tokens?page=1&page_size=20
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 再次读取 API Token 明文
+GET {{baseUrl}}/tokens/{{createToken.response.body.$.data.id}}/secret
 Authorization: Bearer {{login.response.body.$.data.token}}
 
 ### 使用 API Token 调用管理接口（预期 UNAUTHORIZED）

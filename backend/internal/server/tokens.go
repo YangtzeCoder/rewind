@@ -23,6 +23,7 @@ func registerTokenRoutes(router *gin.RouterGroup, authService *auth.Service, sto
 	group.Use((&authHandler{service: authService}).authenticate)
 	group.POST("", h.create)
 	group.GET("", h.list)
+	group.GET("/:token_id/secret", h.secret)
 	group.DELETE("/:token_id", h.delete)
 }
 
@@ -52,7 +53,7 @@ func (h *tokenHandler) create(c *gin.Context) {
 	hash := sha256.Sum256([]byte(credential))
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	token := database.APIToken{ID: tokenID, Name: input.Name, CreatedAt: now.UnixMilli()}
-	if err := h.store.Create(c.Request.Context(), token, hex.EncodeToString(hash[:])); err != nil {
+	if err := h.store.Create(c.Request.Context(), token, hex.EncodeToString(hash[:]), credential); err != nil {
 		internalError(c)
 		return
 	}
@@ -79,12 +80,27 @@ func (h *tokenHandler) list(c *gin.Context) {
 		ID        string `json:"id"`
 		Name      string `json:"name"`
 		CreatedAt string `json:"created_at"`
+		Viewable  bool   `json:"viewable"`
 	}
 	result := make([]listTokenResponse, 0, len(tokens))
 	for _, token := range tokens {
-		result = append(result, listTokenResponse{ID: token.ID, Name: token.Name, CreatedAt: time.UnixMilli(token.CreatedAt).UTC().Format(time.RFC3339Nano)})
+		result = append(result, listTokenResponse{ID: token.ID, Name: token.Name, CreatedAt: time.UnixMilli(token.CreatedAt).UTC().Format(time.RFC3339Nano), Viewable: token.Viewable})
 	}
 	success(c, result)
+}
+
+func (h *tokenHandler) secret(c *gin.Context) {
+	value, found, err := h.store.Secret(c.Request.Context(), strings.ToLower(c.Param("token_id")))
+	if err != nil {
+		internalError(c)
+		return
+	}
+	if !found {
+		failure(c, errNotFound, "token secret is unavailable")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	success(c, gin.H{"token": value})
 }
 
 func paginationValue(c *gin.Context, name string, fallback, max int64) (int64, error) {

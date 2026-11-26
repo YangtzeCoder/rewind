@@ -149,6 +149,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
       ),
     listTokens: (params?: Pagination) => request<ApiToken[]>(`/tokens${query(params)}`),
     createToken: (name: string) => request<CreatedApiToken>('/tokens', json('POST', { name })),
+    getTokenSecret: (id: string) =>
+      request<{ token: string }>(`/tokens/${encodeURIComponent(id)}/secret`),
     deleteToken: (id: string) =>
       request<void>(`/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     backupHistory: (input: BackupHistoryRequest) =>
